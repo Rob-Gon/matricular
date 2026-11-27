@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Achievements\WordPlay;
 use App\Enums\LetterSets;
 use App\Models\Achievement;
 use App\Models\Run;
@@ -59,7 +60,8 @@ class AchievementTest extends TestCase
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'barcos'])
             ->assertJsonPath('achievements', []);
 
-        $this->assertSame(['long_word'], $this->unlockedKeys($run->user));
+        // "carburaciones" also has the five vowels.
+        $this->assertSame(['long_word', 'panvocalic'], $this->unlockedKeys($run->user));
     }
 
     public function test_a_rejected_word_unlocks_nothing(): void
@@ -80,12 +82,16 @@ class AchievementTest extends TestCase
 
     public function test_score_milestones(): void
     {
-        $easy = Run::factory()->create(['plate' => 'BRC', 'score' => 495]);
+        $easy = Run::factory()->countdown()->create(['plate' => 'BRC', 'score' => 495]);
+        $infinite = Run::factory()->create(['plate' => 'BRC', 'score' => 495]);
         $hard = Run::factory()->settings(LetterSets::FULL, ordered: true)->create(['plate' => 'BRC', 'score' => 245]);
         $unordered = Run::factory()->settings(LetterSets::FULL)->create(['plate' => 'BRC', 'score' => 245]);
 
         $this->actingAs($easy->user)->postJson(route('game.check-word', $easy), ['word' => 'barco'])
             ->assertJsonPath('achievements.0.key', 'high_score');
+        // 500 points only count in countdowns: an infinite run gets there given time.
+        $this->actingAs($infinite->user)->postJson(route('game.check-word', $infinite), ['word' => 'barco'])
+            ->assertJsonPath('achievements', []);
         $this->actingAs($hard->user)->postJson(route('game.check-word', $hard), ['word' => 'barco'])
             ->assertJsonPath('achievements.0.key', 'hard_high_score');
         $this->actingAs($unordered->user)->postJson(route('game.check-word', $unordered), ['word' => 'barco'])
@@ -159,9 +165,11 @@ class AchievementTest extends TestCase
         $run = Run::factory()->create(['plate' => 'BRC']);
         $unlocker = app(AchievementUnlocker::class);
 
+        $attempt = $run->runWords()->make(['kind' => 'word', 'key' => 'BARCO', 'valid' => true]);
+
         $this->expectsDatabaseQueryCount(1);
 
-        $unlocker->afterWord($run, 'BARCO');
+        $unlocker->afterWord(new WordPlay($run, $attempt));
     }
 
     public function test_the_achievements_page_hides_locked_hidden_achievements(): void

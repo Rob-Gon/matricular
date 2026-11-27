@@ -2,10 +2,13 @@
 
 namespace App\Achievements\Contracts;
 
-use App\Models\Run;
+use App\Achievements\WordPlay;
 
-/** Checked after every accepted word. Keep it to in-memory checks on the run and the word. */
+/**
+ * Checked after every word attempt, accepted or not. Keep checks in memory; WordPlay::history()
+ * loads the run's attempts once for the checks that need them.
+ */
 interface WordAchievement
 {
-    public function isUnlockedByWord(Run $run, string $word): bool;
+    public function isUnlockedByWord(WordPlay $play): bool;
 }

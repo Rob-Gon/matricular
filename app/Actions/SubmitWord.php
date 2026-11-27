@@ -10,6 +10,12 @@ use App\Support\WordNormalizer;
 
 class SubmitWord
 {
+    /**
+     * Famous "longest words" refused on purpose, even if a dictionary has them, and never learned.
+     * Trying one unlocks a hidden achievement.
+     */
+    public const TRAP_WORDS = ['PNEUMONOULTRAMICROSCOPICSILICOVOLCANOCONIOSIS', 'ELECTROENCEFALOGRAFISTA'];
+
     public function __construct(
         private PlateGenerator $plates,
         private Dictionary $dictionary,
@@ -17,9 +23,9 @@ class SubmitWord
 
     /**
      * Validates the word against the run's current plate and updates the run.
-     * On success, `word` holds the normalized word that was stored.
+     * `attempt` holds the recorded attempt, for the achievements; it is not sent to the client.
      *
-     * @return array{success: bool, message: string, game_over?: bool, word?: string}
+     * @return array{success: bool, message: string, game_over?: bool, attempt?: RunWord}
      */
     public function handle(Run $run, string $input): array
     {
@@ -36,9 +42,13 @@ class SubmitWord
             $penalty = 'Has perdido '.Run::POINTS_PENALTY.' puntos.';
 
             if ($run->hasCorrectWord($word)) {
-                $run->addRepeatedWord($word, $input);
+                $attempt = $run->addRepeatedWord($word, $input);
 
-                return ['success' => false, 'message' => 'Ya has usado esa palabra en esta partida. No suma puntos.'];
+                return ['success' => false, 'message' => 'Ya has usado esa palabra en esta partida. No suma puntos.', 'attempt' => $attempt];
+            }
+
+            if (in_array($word, self::TRAP_WORDS, true)) {
+                return $this->reject($run, $word, $input, RunWord::REASON_TRAP, "¡Buen intento! Esa palabra no cuela. {$penalty}");
             }
 
             if (! $this->containsLetters($word, $plate)) {
@@ -60,23 +70,23 @@ class SubmitWord
                 return $this->reject($run, $word, $input, RunWord::REASON_NOT_IN_DICTIONARY, "¡Fallo! La palabra no existe en el diccionario. {$penalty}");
             }
 
-            $run->addCorrectWord($word, $input, $form);
+            $attempt = $run->addCorrectWord($word, $input, $form, $this->dictionary->categories($word));
             $run->dealPlate($this->plates->generate($run->letter_set, $run->ordered));
             $run->save();
 
-            return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'word' => $word];
+            return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'attempt' => $attempt];
         });
     }
 
     /**
-     * @return array{success: false, message: string}
+     * @return array{success: false, message: string, attempt: RunWord}
      */
     private function reject(Run $run, string $word, string $input, string $reason, string $message): array
     {
-        $run->addErrorWord($word, $input, $reason);
+        $attempt = $run->addErrorWord($word, $input, $reason);
         $run->save();
 
-        return ['success' => false, 'message' => $message];
+        return ['success' => false, 'message' => $message, 'attempt' => $attempt];
     }
 
     /**

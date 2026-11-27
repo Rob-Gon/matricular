@@ -186,22 +186,30 @@ class Run extends Model
         return $this->runWords()->where('valid', true)->where('key', $key)->exists();
     }
 
-    public function addCorrectWord(string $key, string $input, ?string $form): void
+    /**
+     * @param  list<string>  $categories  parts of speech of the word
+     */
+    public function addCorrectWord(string $key, string $input, ?string $form, array $categories = []): RunWord
     {
         $this->score += self::POINTS_CORRECT;
-        $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'form' => $form, 'valid' => true, 'points' => self::POINTS_CORRECT]);
+
+        return $this->record([
+            'kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'form' => $form,
+            'categories' => $categories === [] ? null : implode(',', $categories), 'valid' => true, 'points' => self::POINTS_CORRECT,
+        ]);
     }
 
-    public function addErrorWord(string $key, string $input, string $reason): void
+    public function addErrorWord(string $key, string $input, string $reason): RunWord
     {
         $this->score -= self::POINTS_PENALTY;
-        $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => $reason, 'points' => -self::POINTS_PENALTY]);
+
+        return $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => $reason, 'points' => -self::POINTS_PENALTY]);
     }
 
     /** A word already accepted in this run: kept for the stats, scores nothing. */
-    public function addRepeatedWord(string $key, string $input): void
+    public function addRepeatedWord(string $key, string $input): RunWord
     {
-        $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => RunWord::REASON_REPEATED, 'points' => 0]);
+        return $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => RunWord::REASON_REPEATED, 'points' => 0]);
     }
 
     public function skipPlate(string $newPlate): void
@@ -214,10 +222,11 @@ class Run extends Model
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function record(array $attributes): void
+    private function record(array $attributes): RunWord
     {
-        $this->runWords()->create([
+        return $this->runWords()->create([
             'plate' => $this->plate,
+            'valid' => false,
             'elapsed_ms' => $this->plate_dealt_at === null ? null : (int) abs(now()->diffInMilliseconds($this->plate_dealt_at)),
             ...$attributes,
         ]);

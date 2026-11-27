@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $input
  * @property string|null $key
  * @property string|null $form
+ * @property string|null $categories
  * @property bool $valid
  * @property string|null $reason
  * @property int $points
@@ -37,6 +38,8 @@ class RunWord extends Model
 
     public const REASON_REPEATED = 'repeated';
 
+    public const REASON_TRAP = 'trap';
+
     public const UPDATED_AT = null;
 
     // Milliseconds matter: answer times now, "first wins" ordering in multiplayer later.
@@ -45,7 +48,7 @@ class RunWord extends Model
     /**
      * @var list<string>
      */
-    protected $fillable = ['kind', 'plate', 'input', 'key', 'form', 'valid', 'reason', 'points', 'elapsed_ms'];
+    protected $fillable = ['kind', 'plate', 'input', 'key', 'form', 'categories', 'valid', 'reason', 'points', 'elapsed_ms'];
 
     /**
      * @return array<string, string>
@@ -75,6 +78,21 @@ class RunWord extends Model
         return $this->form ?? mb_strtolower((string) $this->input);
     }
 
+    /**
+     * Parts of speech of an accepted word ("noun", "adj", "verb"...).
+     *
+     * @return list<string>
+     */
+    public function categoryList(): array
+    {
+        return $this->categories === null || $this->categories === '' ? [] : explode(',', $this->categories);
+    }
+
+    public function hasCategory(string $category): bool
+    {
+        return in_array($category, $this->categoryList(), true);
+    }
+
     public function isRepeated(): bool
     {
         return $this->reason === self::REASON_REPEATED;
@@ -90,6 +108,7 @@ class RunWord extends Model
             self::REASON_WRONG_ORDER => 'Las letras no van en el orden de la matrícula',
             self::REASON_NOT_IN_DICTIONARY => 'No está en el diccionario',
             self::REASON_REPEATED => 'Repetida: no suma ni resta',
+            self::REASON_TRAP => 'Buen intento: esa no cuela',
             default => 'No valió',
         };
     }
