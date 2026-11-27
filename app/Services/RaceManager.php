@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
+use App\Actions\SubmitWord;
 use App\Enums\GameModes;
 use App\Enums\LetterSets;
 use App\Enums\LobbyFormats;
 use App\Events\LobbyUpdated;
 use App\Events\RaceScored;
+use App\Events\TiebreakUpdated;
 use App\Models\Lobby;
 use App\Models\LobbyMatch;
+use App\Models\MatchTiebreak;
 use App\Models\Run;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,7 +25,7 @@ class RaceManager
 {
     public const MIN_PLAYERS = 2;
 
-    public function __construct(private PlateGenerator $plates) {}
+    public function __construct(private PlateGenerator $plates, private SubmitWord $words) {}
 
     /**
      * @throws ValidationException when the lobby cannot start yet
@@ -96,8 +100,8 @@ class RaceManager
     }
 
     /**
-     * Closes the match once every run has ended or the clock has run out, and sends the lobby back
-     * to the starting grid for the rematch (everyone but the host confirms "ready" again).
+     * Closes the match once every run has ended or the clock has run out, then settles it: podium
+     * tiebreaks first, if the lobby plays them, and then back to the starting grid.
      */
     public function finishIfDue(LobbyMatch $match): bool
     {
@@ -111,19 +115,105 @@ class RaceManager
             $match->update(['finished_at' => now()]);
             // Runs whose page was closed never called "end".
             $match->runs()->whereNull('ended_at')->update(['ended_at' => now()]);
-
-            $lobby = $match->lobby;
-            if ($lobby !== null) {
-                $lobby->update(['status' => Lobby::STATUS_WAITING, 'last_activity_at' => now()]);
-                $lobby->players()->where('user_id', '!=', $lobby->host_id)->update(['ready' => false]);
-                event(LobbyUpdated::from($lobby->fresh() ?? $lobby));
-            }
+            $this->settle($match);
 
             return true;
         });
     }
 
-    /** For the scheduler: races nobody closed because every player left the page. */
+    /**
+     * After the race: closes a tiebreak whose time is up, starts the next one while tied players
+     * share a podium position, and otherwise sends the lobby back to the grid for the rematch
+     * (everyone but the host confirms "ready" again). Safe to call any number of times.
+     */
+    public function settle(LobbyMatch $match): void
+    {
+        DB::transaction(function () use ($match): void {
+            $match = LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
+
+            if ($match === null || ! $match->isFinished()) {
+                return;
+            }
+
+            $active = $match->activeTiebreak();
+            if ($active !== null) {
+                if (! $active->isDue()) {
+                    return;
+                }
+
+                // Nobody solved it: the players keep sharing the position.
+                $active->update(['resolved_at' => now()]);
+            }
+
+            $tie = $match->nextTie();
+            if ($tie !== null) {
+                $startsAt = now()->addSeconds(MatchTiebreak::COUNTDOWN_SECONDS);
+                $match->tiebreaks()->create([
+                    ...$tie,
+                    'plate' => $this->plates->generate(LetterSets::from($match->settings['letter_set']), (bool) $match->settings['ordered']),
+                    'starts_at' => $startsAt,
+                    'ends_at' => $startsAt->copy()->addSeconds(MatchTiebreak::SECONDS),
+                ]);
+                $this->tiebreakChanged($match);
+
+                return;
+            }
+
+            $lobby = $match->lobby;
+            if ($lobby !== null && $lobby->status === Lobby::STATUS_PLAYING && $lobby->latestMatch()?->is($match)) {
+                $lobby->update(['status' => Lobby::STATUS_WAITING, 'last_activity_at' => now()]);
+                $lobby->players()->where('user_id', '!=', $lobby->host_id)->update(['ready' => false]);
+                event(LobbyUpdated::from($lobby->fresh() ?? $lobby));
+            }
+        });
+    }
+
+    /**
+     * A tied player's answer to the tiebreak plate. The first valid word wins it; wrong words cost
+     * nothing, since the race scores are final.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function answerTiebreak(MatchTiebreak $tiebreak, User $user, string $word): array
+    {
+        return DB::transaction(function () use ($tiebreak, $user, $word): array {
+            $tiebreak = MatchTiebreak::whereKey($tiebreak->id)->lockForUpdate()->firstOrFail();
+
+            $problem = match (true) {
+                $tiebreak->isResolved() => 'El desempate ya ha terminado.',
+                $tiebreak->starts_at->isFuture() => 'Espera a que salga la matrícula.',
+                $tiebreak->isDue() => 'Se ha acabado el tiempo del desempate.',
+                default => null,
+            };
+
+            if ($problem !== null) {
+                return ['success' => false, 'message' => $problem];
+            }
+
+            $match = $tiebreak->lobbyMatch;
+            $verdict = $this->words->judge($word, $tiebreak->plateLetters(), (bool) $match->settings['ordered']);
+
+            if ($verdict === null) {
+                return ['success' => false, 'message' => 'No se ha podido verificar la palabra. Inténtalo de nuevo.'];
+            }
+
+            if ($verdict['reason'] !== null) {
+                return ['success' => false, 'message' => SubmitWord::failure($verdict['reason'])];
+            }
+
+            $tiebreak->update([
+                'winner_id' => $user->id,
+                'winning_word' => $verdict['form'] ?? mb_strtolower(trim($word)),
+                'resolved_at' => now(),
+            ]);
+            $this->tiebreakChanged($match);
+            $this->settle($match);
+
+            return ['success' => true, 'message' => '¡Desempate ganado!'];
+        });
+    }
+
+    /** For the scheduler: races and tiebreaks nobody closed because every player left the page. */
     public function finishOverdue(): int
     {
         $finished = 0;
@@ -134,7 +224,19 @@ class RaceManager
                 $finished += (int) $this->finishIfDue($match);
             });
 
+        MatchTiebreak::whereNull('resolved_at')
+            ->where('ends_at', '<', now()->subSeconds(Run::LATENCY_GRACE_SECONDS))
+            ->with('lobbyMatch')
+            ->each(fn (MatchTiebreak $tiebreak) => $this->settle($tiebreak->lobbyMatch));
+
         return $finished;
+    }
+
+    private function tiebreakChanged(LobbyMatch $match): void
+    {
+        if ($match->lobby_id !== null) {
+            event(new TiebreakUpdated($match->lobby_id));
+        }
     }
 
     /**

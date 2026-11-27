@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{lobby}/race/words', 'word')->name('race.word');
                 Route::post('/{lobby}/race/plate', 'plate')->name('race.plate');
                 Route::post('/{lobby}/race/end', 'end')->name('race.end');
+                Route::post('/{lobby}/tiebreak', 'tiebreak')->name('tiebreak');
             });
         });
     });

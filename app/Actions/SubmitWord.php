@@ -42,8 +42,6 @@ class SubmitWord
             // Stored and compared by key, so "camión" and "camion" are the same word.
             $input = trim($input);
             $word = WordNormalizer::key($input);
-            $plate = $run->plateLetters();
-            $penalty = 'Has perdido '.Run::POINTS_PENALTY.' puntos.';
 
             if ($run->hasCorrectWord($word)) {
                 $attempt = $run->addRepeatedWord($word, $input);
@@ -51,29 +49,24 @@ class SubmitWord
                 return ['success' => false, 'message' => 'Ya has usado esa palabra en esta partida. No suma puntos.', 'attempt' => $attempt];
             }
 
-            if (in_array($word, self::TRAP_WORDS, true)) {
-                return $this->reject($run, $word, $input, RunWord::REASON_TRAP, "¡Buen intento! Esa palabra no cuela. {$penalty}");
-            }
+            $verdict = $this->judge($input, $run->plateLetters(), $run->ordered);
 
-            if (! $this->containsLetters($word, $plate)) {
-                return $this->reject($run, $word, $input, RunWord::REASON_MISSING_LETTERS, "¡Fallo! La palabra no contiene todas las letras de la matrícula. {$penalty}");
-            }
-
-            if ($run->ordered && ! $this->containsInOrder($word, $plate)) {
-                return $this->reject($run, $word, $input, RunWord::REASON_WRONG_ORDER, "¡Fallo! Las letras deben aparecer en el orden de la matrícula. {$penalty}");
-            }
-
-            // The raw input keeps any accents the player typed, which saves the API a suggestion round.
-            $form = $this->dictionary->find($input);
-
-            if ($form === null) {
+            if ($verdict === null) {
                 return ['success' => false, 'message' => 'No se ha podido verificar la palabra. Inténtalo de nuevo, no has perdido puntos.'];
             }
 
-            if ($form === false) {
-                return $this->reject($run, $word, $input, RunWord::REASON_NOT_IN_DICTIONARY, "¡Fallo! La palabra no existe en el diccionario. {$penalty}");
+            if ($verdict['reason'] !== null) {
+                $attempt = $run->addErrorWord($word, $input, $verdict['reason']);
+                $run->save();
+
+                return [
+                    'success' => false,
+                    'message' => self::failure($verdict['reason']).' Has perdido '.Run::POINTS_PENALTY.' puntos.',
+                    'attempt' => $attempt,
+                ];
             }
 
+            $form = $verdict['form'];
             $attempt = $run->addCorrectWord($word, $input, $form, $this->dictionary->categories($word));
             $run->dealPlate($run->nextPlate($this->plates));
             $run->save();
@@ -83,14 +76,47 @@ class SubmitWord
     }
 
     /**
-     * @return array{success: false, message: string, attempt: RunWord}
+     * Whether a word solves a plate: a refusal reason (RunWord::REASON_*) or the dictionary spelling.
+     * Null when the dictionary could not be reached, so the player loses nothing.
+     *
+     * @param  list<string>  $plate
+     * @return array{reason: string|null, form: string|null}|null
      */
-    private function reject(Run $run, string $word, string $input, string $reason, string $message): array
+    public function judge(string $input, array $plate, bool $ordered): ?array
     {
-        $attempt = $run->addErrorWord($word, $input, $reason);
-        $run->save();
+        $input = trim($input);
+        $word = WordNormalizer::key($input);
 
-        return ['success' => false, 'message' => $message, 'attempt' => $attempt];
+        $reason = match (true) {
+            in_array($word, self::TRAP_WORDS, true) => RunWord::REASON_TRAP,
+            ! $this->containsLetters($word, $plate) => RunWord::REASON_MISSING_LETTERS,
+            $ordered && ! $this->containsInOrder($word, $plate) => RunWord::REASON_WRONG_ORDER,
+            default => null,
+        };
+
+        if ($reason !== null) {
+            return ['reason' => $reason, 'form' => null];
+        }
+
+        // The raw input keeps any accents the player typed, which saves the API a suggestion round.
+        $form = $this->dictionary->find($input);
+
+        return match ($form) {
+            null => null,
+            false => ['reason' => RunWord::REASON_NOT_IN_DICTIONARY, 'form' => null],
+            default => ['reason' => null, 'form' => $form],
+        };
+    }
+
+    /** What the player reads when a word is refused (without the penalty). */
+    public static function failure(string $reason): string
+    {
+        return match ($reason) {
+            RunWord::REASON_TRAP => '¡Buen intento! Esa palabra no cuela.',
+            RunWord::REASON_MISSING_LETTERS => '¡Fallo! La palabra no contiene todas las letras de la matrícula.',
+            RunWord::REASON_WRONG_ORDER => '¡Fallo! Las letras deben aparecer en el orden de la matrícula.',
+            default => '¡Fallo! La palabra no existe en el diccionario.',
+        };
     }
 
     /**

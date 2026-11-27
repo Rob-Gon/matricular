@@ -114,7 +114,7 @@
                         </template>
                     </dl>
                     <button type="button" class="btn btn-sm self-start" x-show="isHost" @click="editing = true; resetForm(); $nextTick(() => $refs.rulesDialog.showModal())">Cambiar reglas</button>
-                    <p class="text-lg leading-snug">Solo el anfitrión (la corona) cambia las reglas y expulsa. Si se va, manda quien más tiempo lleve en la sala.</p>
+                    <p class="text-lg leading-snug">Solo el anfitrión cambia las reglas y expulsa. Si se va, manda quien más tiempo lleve en la sala.</p>
                 </aside>
             </div>
 
