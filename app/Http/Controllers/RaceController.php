@@ -137,22 +137,49 @@ class RaceController extends Controller
             return redirect()->route('lobbies.show', $lobby);
         }
 
-        // Whoever looks first closes a race whose clock has run out.
+        // Whoever looks first closes a race (or a tiebreak) whose clock has run out.
         $this->races->finishIfDue($match);
+        $this->races->settle($match);
         $match->refresh();
+
+        $tiebreak = $match->activeTiebreak();
+        $standings = collect($match->standings());
+        // The page reloads when the race or the tiebreak should be over, in case a broadcast is missed.
+        $reloadAt = $tiebreak !== null ? $tiebreak->ends_at : ($match->isFinished() ? null : $match->ends_at);
 
         return view('lobbies.results', [
             'lobby' => $lobby,
             'match' => $match,
             'run' => $run,
             'report' => $report->build($match),
+            'tiebreak' => $tiebreak,
+            'tiedNames' => $tiebreak ? $standings->whereIn('id', $tiebreak->player_ids)->pluck('name')->all() : [],
+            'settled' => $match->tiebreaks()->whereNotNull('resolved_at')->with('winner:id,name')->get(),
             'config' => [
                 'lobbyId' => $lobby->id,
-                'finished' => $match->isFinished(),
-                'reloadInMs' => max(0, (int) now()->diffInMilliseconds($match->ends_at, false)) + (Run::LATENCY_GRACE_SECONDS + 1) * 1000,
-                'urls' => ['index' => route('lobbies.index')],
+                'watching' => $reloadAt !== null,
+                'reloadInMs' => $reloadAt === null ? null : max(0, (int) now()->diffInMilliseconds($reloadAt, false)) + (Run::LATENCY_GRACE_SECONDS + 1) * 1000,
+                'tiebreak' => $tiebreak === null ? null : [
+                    'playing' => $tiebreak->includes($request->user()),
+                    'startsInMs' => max(0, (int) now()->diffInMilliseconds($tiebreak->starts_at, false)),
+                    'seconds' => (int) max(0, ceil(now()->diffInSeconds($tiebreak->ends_at, false))),
+                ],
+                'csrf' => csrf_token(),
+                'urls' => ['index' => route('lobbies.index'), 'tiebreak' => route('lobbies.tiebreak', $lobby)],
             ],
         ]);
+    }
+
+    /** A tied player's word for the tiebreak plate. */
+    public function tiebreak(SubmitWordRequest $request, Lobby $lobby): JsonResponse
+    {
+        Gate::authorize('view', $lobby);
+        $tiebreak = $lobby->latestMatch()?->activeTiebreak();
+
+        abort_if($tiebreak === null, 409, 'El desempate ya ha terminado.');
+        abort_unless($tiebreak->includes($request->user()), 403);
+
+        return response()->json($this->races->answerTiebreak($tiebreak, $request->user(), $request->validated('word')));
     }
 
     /**

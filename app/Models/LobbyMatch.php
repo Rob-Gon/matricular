@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $finished_at
  * @property-read Lobby|null $lobby
  * @property-read Collection<int, Run> $runs
+ * @property-read Collection<int, MatchTiebreak> $tiebreaks
  */
 class LobbyMatch extends Model
 {
@@ -67,6 +68,43 @@ class LobbyMatch extends Model
         return $this->hasMany(Run::class)->withoutGlobalScope(Run::SOLO_SCOPE);
     }
 
+    /**
+     * @return HasMany<MatchTiebreak, $this>
+     */
+    public function tiebreaks(): HasMany
+    {
+        return $this->hasMany(MatchTiebreak::class)->orderBy('id');
+    }
+
+    public function activeTiebreak(): ?MatchTiebreak
+    {
+        return $this->tiebreaks()->whereNull('resolved_at')->first();
+    }
+
+    /**
+     * Players still sharing a podium position who have not played a tiebreak for it yet, if any.
+     * A tiebreak nobody won leaves its players sharing the position for good.
+     *
+     * @return array{position: int, player_ids: list<int>}|null
+     */
+    public function nextTie(): ?array
+    {
+        if (($this->settings['tie_resolution'] ?? null) !== 'tiebreak') {
+            return null;
+        }
+
+        $played = $this->tiebreaks()->whereNotNull('resolved_at')->whereNull('winner_id')->pluck('position')->all();
+        $groups = collect($this->standings())->groupBy('position');
+
+        foreach ($groups as $position => $rows) {
+            if ($position <= 3 && $rows->count() > 1 && ! in_array($position, $played, true)) {
+                return ['position' => (int) $position, 'player_ids' => $rows->pluck('id')->all()];
+            }
+        }
+
+        return null;
+    }
+
     /** Plate number $n of the match (0 is the first one). */
     public function plateAt(int $n): string
     {
@@ -91,7 +129,8 @@ class LobbyMatch extends Model
     }
 
     /**
-     * Players by score, best first. Equal scores share the position (1, 1, 3).
+     * Players by score, best first. Equal scores share the position (1, 1, 3) unless a tiebreak
+     * settled it: its winner keeps the position and the other tied players move one down.
      *
      * @return list<array{id: int, name: string, color: string, score: int, position: int}>
      */
@@ -111,6 +150,17 @@ class LobbyMatch extends Model
                 'position' => $previous !== null && $previous['score'] === $run->score ? $previous['position'] : $index + 1,
             ];
         }
+
+        foreach ($this->tiebreaks()->whereNotNull('winner_id')->get() as $tiebreak) {
+            foreach ($standings as &$row) {
+                if ($row['position'] === $tiebreak->position && in_array($row['id'], $tiebreak->player_ids, true) && $row['id'] !== $tiebreak->winner_id) {
+                    $row['position']++;
+                }
+            }
+            unset($row);
+        }
+
+        usort($standings, fn (array $a, array $b) => [$a['position'], -$a['score'], $a['id']] <=> [$b['position'], -$b['score'], $b['id']]);
 
         return $standings;
     }

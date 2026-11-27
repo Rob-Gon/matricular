@@ -1,6 +1,7 @@
 @php
     $standings = $report['standings'];
-    $finished = $config['finished'];
+    $finished = $match->isFinished();
+    $ordinal = fn (int $position) => $position.(in_array($position, [1, 3], true) ? '.er' : '.º');
     // Podium order on screen: 2nd, 1st, 3rd.
     $steps = [1 => ['h-36', 'bg-[#D9DBE1]'], 0 => ['h-52', 'bg-mustard'], 2 => ['h-28', 'bg-[#C98A5A]']];
     $settings = implode(', ', $run->settingsLabels());
@@ -22,6 +23,37 @@
             @unless ($finished)
                 <p role="status" class="paper surface-light px-5 py-3 text-xl font-bold">Esperando a que el resto llegue a meta. Los resultados se actualizan solos.</p>
             @endunless
+
+            @foreach ($settled as $past)
+                <p class="text-center text-xl font-bold">
+                    Desempate por el {{ $ordinal($past->position) }} puesto:
+                    {{ $past->winner ? 'ganó '.$past->winner->name.' con «'.$past->winning_word.'».' : 'nadie acertó a tiempo y comparten puesto.' }}
+                </p>
+            @endforeach
+
+            @if ($tiebreak)
+                {{-- Versus: only the tied players answer; everyone else watches. --}}
+                <div role="status" class="flex w-full max-w-2xl flex-col items-center gap-4 rounded-2xl border-4 border-ink bg-mustard px-6 py-5 text-center text-ink shadow-hard">
+                    <p class="text-2xl leading-tight font-black">
+                        Empate por el {{ $ordinal($tiebreak->position) }} puesto: {{ collect($tiedNames)->join(', ', ' y ') }} juegan una matrícula de desempate.
+                    </p>
+                    <p x-show="!tiebreakOn" class="title-ink text-5xl" x-text="tiebreakCountdown"></p>
+                    <div x-show="tiebreakOn" x-cloak class="flex flex-col items-center gap-4">
+                        <x-plate :letters="$tiebreak->plate" :digits="str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT)" scale="0.8" />
+                        <p class="text-xl font-bold"><span x-text="tiebreakSeconds"></span> s para acertar. Gana la primera palabra válida.</p>
+                        @if ($tiebreak->includes(auth()->user()))
+                            <form class="surface-light flex w-full flex-wrap items-stretch gap-3" @submit.prevent="answerTiebreak()">
+                                <label for="tiebreak-word" class="sr-only">Tu palabra para el desempate</label>
+                                <input id="tiebreak-word" x-ref="tiebreakWord" x-model="tiebreakWord" class="word-input min-w-0 flex-[999_1_240px]" type="text" maxlength="50" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Escribe aquí" @paste.prevent>
+                                <button type="submit" class="btn flex-[1_1_150px] text-xl" :disabled="busy">Comprobar</button>
+                            </form>
+                            <p class="text-xl font-bold" x-show="tiebreakMessage" x-text="tiebreakMessage" aria-live="polite"></p>
+                        @else
+                            <p class="text-xl font-bold">Mira quién acierta primero.</p>
+                        @endif
+                    </div>
+                </div>
+            @endif
 
             <ol aria-label="Podio" class="mt-3 flex items-end">
                 @foreach ($steps as $index => [$height, $color])

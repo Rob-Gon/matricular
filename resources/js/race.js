@@ -5,29 +5,94 @@ const RED = '#C8361F';
 const GREEN = '#3FAE5A';
 const GO_SHOWN_MS = 900;
 
-// Results page: until every player has crossed the line, reload when the race closes.
+// Results page: reloads when the race closes or a tiebreak starts or ends, and runs the tiebreak
+// countdown and answers. The server decides the winner.
 export const raceResults = (config) => ({
+    tiebreakOn: (config.tiebreak?.startsInMs ?? 0) <= 0,
+    tiebreakCountdown: Math.ceil((config.tiebreak?.startsInMs ?? 0) / 1000),
+    tiebreakSeconds: config.tiebreak?.seconds ?? 0,
+    tiebreakWord: '',
+    tiebreakMessage: '',
+    busy: false,
+
     async init() {
-        if (config.finished) {
+        if (config.tiebreak) {
+            this.runTiebreakClock();
+        }
+
+        if (!config.watching) {
             return;
         }
 
-        // Fallback for a missed broadcast: the server closes the race once its clock has run out.
+        // Fallback for a missed broadcast: the server closes the race or the tiebreak once its time is up.
         this.reloadTimer = setTimeout(() => window.location.reload(), config.reloadInMs);
 
         await import('./echo');
-        window.Echo.join(`lobby.${config.lobbyId}`).listen('.lobby.updated', (state) => {
-            if (state.closed) {
-                window.location.assign(`${config.urls.index}?cerrada=1`);
-            } else if (state.status !== 'playing') {
-                window.location.reload();
-            }
-        });
+        window.Echo.join(`lobby.${config.lobbyId}`)
+            .listen('.race.tiebreak', () => window.location.reload())
+            .listen('.lobby.updated', (state) => {
+                if (state.closed) {
+                    window.location.assign(`${config.urls.index}?cerrada=1`);
+                } else if (state.status !== 'playing') {
+                    window.location.reload();
+                }
+            });
     },
 
     destroy() {
         clearTimeout(this.reloadTimer);
+        clearInterval(this.tiebreakTimer);
         window.Echo?.leave(`lobby.${config.lobbyId}`);
+    },
+
+    // Counted against fixed times, not ticks, like the race clock.
+    runTiebreakClock() {
+        const startAt = Date.now() + config.tiebreak.startsInMs;
+        const endAt = Date.now() + config.tiebreak.seconds * 1000;
+        const step = () => {
+            const now = Date.now();
+            this.tiebreakCountdown = Math.max(1, Math.ceil((startAt - now) / 1000));
+            this.tiebreakSeconds = Math.max(0, Math.ceil((endAt - Math.max(now, startAt)) / 1000));
+
+            if (!this.tiebreakOn && now >= startAt) {
+                this.tiebreakOn = true;
+                this.$store.sound.beep(true);
+                this.$nextTick(() => this.$refs.tiebreakWord?.focus());
+            }
+        };
+
+        step();
+        this.tiebreakTimer = setInterval(step, 200);
+    },
+
+    async answerTiebreak() {
+        const word = this.tiebreakWord.trim();
+        if (this.busy || word.length < 3) {
+            this.tiebreakMessage = word.length < 3 ? 'Escribe al menos 3 letras.' : this.tiebreakMessage;
+            return;
+        }
+
+        this.busy = true;
+        try {
+            const response = await fetch(config.urls.tiebreak, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': config.csrf },
+                body: JSON.stringify({ word }),
+            });
+            const data = await response.json().catch(() => ({}));
+            this.tiebreakMessage = data.message ?? 'No se ha podido comprobar. Inténtalo de nuevo.';
+
+            if (response.ok && data.success) {
+                this.$store.sound.play('correct');
+            } else {
+                this.tiebreakWord = '';
+                this.$store.sound.play('warn');
+            }
+        } catch {
+            this.tiebreakMessage = 'No hay conexión con el servidor.';
+        } finally {
+            this.busy = false;
+        }
     },
 });
 

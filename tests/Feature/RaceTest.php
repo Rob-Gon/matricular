@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Enums\LobbyFormats;
 use App\Events\LobbyUpdated;
 use App\Events\RaceScored;
+use App\Events\TiebreakUpdated;
 use App\Models\Lobby;
 use App\Models\LobbyMatch;
+use App\Models\MatchTiebreak;
 use App\Models\Run;
 use App\Models\User;
 use App\Services\LobbyManager;
@@ -25,7 +27,7 @@ class RaceTest extends TestCase
 
         // Whole seconds, so the race clock in these tests never straddles a second boundary.
         $this->freezeSecond();
-        Event::fake([LobbyUpdated::class, RaceScored::class]);
+        Event::fake([LobbyUpdated::class, RaceScored::class, TiebreakUpdated::class]);
         Http::fake(['rae-api.com/*' => Http::response(['ok' => true])]);
     }
 
@@ -193,13 +195,93 @@ class RaceTest extends TestCase
 
     public function test_the_scheduler_closes_races_everyone_abandoned(): void
     {
-        [$lobby] = $this->startedRace();
+        [$lobby, , , $match] = $this->startedRace();
+        // Both players end on 0: a tiebreak for first place starts, and nobody plays it either.
         $this->travel(130)->seconds();
-
         $this->artisan('lobbies:close-idle')->assertSuccessful();
 
-        $this->assertNotNull(LobbyMatch::firstOrFail()->finished_at);
-        $this->assertSame(0, LobbyMatch::firstOrFail()->runs()->whereNull('ended_at')->count());
+        $this->assertNotNull($match->fresh()?->finished_at);
+        $this->assertSame(0, $match->runs()->whereNull('ended_at')->count());
+        $this->assertNotNull($match->activeTiebreak());
+        $this->assertSame(Lobby::STATUS_PLAYING, $lobby->fresh()?->status);
+
+        $this->travel(MatchTiebreak::COUNTDOWN_SECONDS + MatchTiebreak::SECONDS + Run::LATENCY_GRACE_SECONDS + 1)->seconds();
+        $this->artisan('lobbies:close-idle')->assertSuccessful();
+
+        $this->assertNull($match->activeTiebreak());
+        $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
+    }
+
+    /**
+     * Ends a race with the given final scores (in run order) and returns the match.
+     *
+     * @param  list<int>  $scores
+     */
+    private function finishedRace(array $scores, string $tieResolution = 'tiebreak'): array
+    {
+        [$lobby, $host, $guests, $match] = $this->startedRace(guests: count($scores) - 1);
+        $match->update(['settings' => [...$match->settings, 'tie_resolution' => $tieResolution]]);
+        foreach ($match->runs()->orderBy('id')->get() as $i => $run) {
+            $run->update(['score' => $scores[$i]]);
+        }
+
+        $this->travel(130)->seconds();
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertOk();
+
+        return [$lobby, $host, $guests, $match->fresh()];
+    }
+
+    public function test_tied_podium_players_play_a_tiebreak_and_the_first_valid_word_wins(): void
+    {
+        [$lobby, $host, [$first, $second], $match] = $this->finishedRace([5, 20, 20]);
+        $tiebreak = $match->activeTiebreak();
+
+        $this->assertNotNull($tiebreak);
+        $this->assertSame(1, $tiebreak->position);
+        $this->assertEqualsCanonicalizing([$first->id, $second->id], $tiebreak->player_ids);
+        $this->assertSame(Lobby::STATUS_PLAYING, $lobby->fresh()?->status);
+        Event::assertDispatched(TiebreakUpdated::class);
+        $tiebreak->update(['plate' => 'BRC']);
+
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertSee('juegan una matrícula de desempate');
+        $this->actingAs($host)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'barco'])->assertForbidden();
+        $this->actingAs($first)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'barco'])->assertJsonPath('success', false);
+
+        $this->travel(MatchTiebreak::COUNTDOWN_SECONDS + 1)->seconds();
+        $this->actingAs($second)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'mesa'])
+            ->assertOk()->assertJsonPath('success', false);
+        $this->actingAs($first)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'barco'])
+            ->assertOk()->assertJsonPath('success', true);
+        $this->actingAs($second)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'cabra'])->assertStatus(409);
+
+        $this->assertSame([$first->id => 1, $second->id => 2, $host->id => 3], array_column($match->standings(), 'position', 'id'));
+        $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertSee('ganó '.$first->name);
+        // Race scores never change.
+        $this->assertSame([5, 20, 20], $match->runs()->orderBy('id')->pluck('score')->all());
+    }
+
+    public function test_a_tiebreak_nobody_solves_leaves_the_position_shared(): void
+    {
+        [$lobby, $host, , $match] = $this->finishedRace([10, 10]);
+
+        $this->travel(MatchTiebreak::COUNTDOWN_SECONDS + MatchTiebreak::SECONDS + Run::LATENCY_GRACE_SECONDS + 1)->seconds();
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertOk()->assertSee('comparten puesto');
+
+        $this->assertSame(1, $match->tiebreaks()->count());
+        $this->assertSame([1, 1], array_column($match->standings(), 'position'));
+        $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
+    }
+
+    public function test_only_podium_ties_are_played_and_only_with_the_tiebreak_option(): void
+    {
+        [$lobby, , , $match] = $this->finishedRace([50, 40, 30, 10, 10]);
+        $this->assertSame(0, $match->tiebreaks()->count());
+        $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
+
+        LobbyMatch::query()->delete();
+        [$lobby, , , $match] = $this->finishedRace([10, 10], tieResolution: 'shared');
+        $this->assertSame(0, $match->tiebreaks()->count());
         $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
     }
 }

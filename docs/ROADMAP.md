@@ -148,7 +148,7 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] Multiplayer runs are `runs` rows with `lobby_match_id`; the `solo` global scope keeps them out of solo routes, rankings, stats and achievements
 - [x] Equal final scores share the position
 ### PR 2b · `feat/race-tiebreak`
-- [ ] `tie_resolution = tiebreak`: tied podium players play one extra plate, first valid word wins (today ties always share the position)
+- [x] `tie_resolution = tiebreak`: players tied on a podium position play one extra plate on the results page (3 s countdown, 30 s to answer); the first valid word wins it, the others move one position down; nobody in time means they keep sharing it. Several ties are played one after another; the lobby returns to the grid when none is left
 ### PR 3 · `feat/shared-rounds`
 - [ ] Rounds (1–30) of up to 5 min, words already used by others in the round score 0
 ### PR 4 · `feat/first-wins`
