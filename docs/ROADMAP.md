@@ -10,7 +10,7 @@ Update this file at the end of every task: tick what is done, add findings, move
 - [x] Initial commit and push
 - [x] Fix local PHP PATH so `php` is Laragon 8.3 (user action)
 - [x] Install Claude Code plugins (user action, commands in the Obsidian note "Plugins Claude Code - Instalación")
-- [ ] Configure GitHub repository settings (user action, see `docs/github-setup.md` or the Obsidian note "Guía Settings GitHub")
+- [x] Configure GitHub repository settings (user action; personal checklist kept in Obsidian)
 - [x] Larastan (level 5 + baseline of 11 legacy errors) + Pint, GitHub Actions CI (Pint, Larastan, tests, `npm run build`)
 - [x] Update vulnerable dependencies (Laravel 12.18 → 12.74; `composer audit` and `npm audit` clean) and run both audits in CI
 - [x] Laravel Boost (`laravel/boost` dev dependency; the plugin provides the MCP config, `boost:install` not needed)
