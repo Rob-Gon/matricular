@@ -32,7 +32,8 @@ Personal project. A competitive word game in the browser: the player gets the le
 ## Architecture
 - `app/Http/Controllers` – thin controllers (currently fat; being refactored).
 - `app/Enums` – game modes, difficulties, countdown durations.
-- `app/Models` – `User`, `Run`, `Achievement`, `UserAchievement`.
+- `app/Models` – `User`, `Run`, `Achievement` (pivot table `user_achievements`).
+- `app/Achievements` + `config/achievements.php` – achievement conditions and catalogue; `AchievementUnlocker` evaluates them. After editing the catalogue run `php artisan db:seed --class=AchievementsSeeder`.
 - `resources/js/main/game-manager.js` – solo game client.
 - Target layout for new code: `app/Actions` or `app/Services` for game logic (word validation, plate generation, scoring), Form Requests for input, Policies for ownership, Events for achievements/broadcasts.
 

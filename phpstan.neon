@@ -1,6 +1,5 @@
 includes:
     - vendor/larastan/larastan/extension.neon
-    - phpstan-baseline.neon
 
 parameters:
     paths:
@@ -8,5 +7,5 @@ parameters:
         - database/
         - routes/
 
-    # Level 5 to start; raise it once F1 has cleaned up the legacy controllers.
+    # Legacy errors are fixed (baseline removed); raise the level progressively.
     level: 5

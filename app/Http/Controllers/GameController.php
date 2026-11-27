@@ -8,6 +8,7 @@ use App\Enums\GameDifficulties;
 use App\Http\Requests\StartGameRequest;
 use App\Http\Requests\SubmitWordRequest;
 use App\Models\Run;
+use App\Services\AchievementUnlocker;
 use App\Services\PlateGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -76,13 +77,17 @@ class GameController extends Controller
     /**
      * Comprueba la palabra y actualiza la puntuación
      */
-    public function checkWord(SubmitWordRequest $request, Run $run, SubmitWord $submitWord): JsonResponse
+    public function checkWord(SubmitWordRequest $request, Run $run, SubmitWord $submitWord, AchievementUnlocker $achievements): JsonResponse
     {
         Gate::authorize('play', $run);
 
         $result = $submitWord->handle($run, $request->validated('word'));
 
-        return $this->gameResponse($run, $result, isset($result['game_over']) ? 409 : 200);
+        if (isset($result['word'])) {
+            $achievements->afterWord($run, $result['word']);
+        }
+
+        return $this->gameResponse($run, $result, isset($result['game_over']) ? 409 : 200, $achievements->unlocked());
     }
 
     /**
@@ -110,27 +115,41 @@ class GameController extends Controller
     /**
      * Termina la partida (botón "Terminar partida" o fin de la cuenta atrás)
      */
-    public function end(Run $run): JsonResponse
+    public function end(Run $run, AchievementUnlocker $achievements): JsonResponse
     {
         Gate::authorize('play', $run);
 
-        $run->withLock(function () use ($run): void {
-            $run->ended_at ??= now();
+        $justEnded = $run->withLock(function () use ($run): bool {
+            if ($run->ended_at !== null) {
+                return false;
+            }
+
+            $run->ended_at = now();
             $run->save();
+
+            return true;
         });
 
-        return $this->gameResponse($run, ['success' => true, 'message' => 'Partida terminada.', 'game_over' => true]);
+        // shortcut: a countdown that expires with the tab closed never calls this endpoint, so its run
+        // achievements are skipped; check them when an expired run is first read if that matters.
+        if ($justEnded) {
+            $achievements->afterRun($run);
+        }
+
+        return $this->gameResponse($run, ['success' => true, 'message' => 'Partida terminada.', 'game_over' => true], 200, $achievements->unlocked());
     }
 
     /**
-     * @param  array{success: bool, message: string, game_over?: bool}  $result
+     * @param  array{success: bool, message: string, game_over?: bool, word?: string}  $result
+     * @param  list<array{key: string, name: string, description: string, icon: string}>  $achievements  Unlocked by this request
      */
-    private function gameResponse(Run $run, array $result, int $status = 200): JsonResponse
+    private function gameResponse(Run $run, array $result, int $status = 200, array $achievements = []): JsonResponse
     {
         return response()->json([
             ...$result,
             'chars' => $run->plateLetters(),
             'score' => $run->score,
+            'achievements' => $achievements,
         ], $status);
     }
 }

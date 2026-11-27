@@ -197,7 +197,8 @@ class GameManager {
         }
 
         // Registra el fin en el servidor; si falla, el servidor la da por terminada igualmente al pasar ends_at
-        $.post($('#game-form').data('endUrl'), { _token: $('meta[name="csrf-token"]').attr('content') });
+        $.post($('#game-form').data('endUrl'), { _token: $('meta[name="csrf-token"]').attr('content') })
+            .done(response => GameManager.showAchievements(response.achievements));
 
         // Mostrar el modal de fin de juego
         $('#gameOverModal').modal('show');
@@ -222,8 +223,30 @@ class GameManager {
             GameManager.updatePlate(response.chars);
         }
 
+        GameManager.showAchievements(response.achievements);
+
         // Limpia el input de la palabra
         $('#word').val('');
+    }
+
+    /**
+     * Muestra un toast por cada logro desbloqueado; se cierran solos y no interrumpen la partida
+     * @param {Array<{name: string, description: string}>} achievements
+     */
+    static showAchievements(achievements = []) {
+        (achievements || []).forEach(achievement => {
+            const header = $('<div class="toast-header">')
+                .append($('<strong class="me-auto">').text('¡Logro desbloqueado!'))
+                .append('<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button>');
+            const body = $('<div class="toast-body">')
+                .append($('<strong class="d-block">').text(achievement.name))
+                .append($('<span>').text(achievement.description));
+            const toast = $('<div class="toast" role="status" aria-live="polite" aria-atomic="true">').append(header, body);
+
+            $('#achievement-toasts').append(toast);
+            toast[0].addEventListener('hidden.bs.toast', () => toast.remove());
+            new bootstrap.Toast(toast[0], { delay: 5000 }).show();
+        });
     }
 
     /**
