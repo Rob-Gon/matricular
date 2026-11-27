@@ -44,4 +44,3 @@ vendor/bin/pint
 
 ## Repository
 - Conventional Commits, one branch per change (`feature/…`, `fix/…`, `chore/…`), merged to `main` through pull requests.
-- GitHub settings: [`docs/github-setup.md`](docs/github-setup.md).

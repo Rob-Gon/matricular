@@ -9,6 +9,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - Multiplayer (planned): lobbies joined by code + optional password, 2–16 players, three competitive formats (see `.claude/rules/game.md`).
 - Registered users only. No guest accounts.
 - Current state and next steps: `docs/ROADMAP.md`. Read it at the start of every session.
+- Personal docs, open security findings and incidents live in the owner's Obsidian folder, linked from the uncommitted `CLAUDE.local.md`. Never document unfixed vulnerabilities in this public repository.
 
 ## Stack & versions
 - PHP 8.3 (Laragon) · Laravel 12 · MySQL 8.4 · Node 26
