@@ -1,0 +1,11 @@
+/*
+    Archivo principal de estilos
+    Este es el archivo principal de estilos de la aplicación
+*/
+
+// Importación de variables y estilos globales
+@use 'app/variables' as *;
+@use 'app/global';
+
+// Importación de estilos personalizados para SweetAlert2
+@use 'app/sweetalert';

@@ -1,0 +1,59 @@
+# Matricular
+
+<!-- This file overrides the global rules in ~/.claude/. -->
+
+## Project
+Personal project. A competitive word game in the browser: the player gets the letters of a Spanish license plate (3 consonants, no vowels, no Ñ, no Q) and must form valid Spanish words containing them, as many and as fast as possible.
+
+- Solo modes: countdown (fixed durations) and infinite.
+- Multiplayer (planned): lobbies joined by code + optional password, 2–16 players, three competitive formats (see `.claude/rules/game.md`).
+- Registered users only. No guest accounts.
+- Current state and next steps: `docs/ROADMAP.md`. Read it at the start of every session.
+
+## Stack & versions
+- PHP 8.3 (Laragon) · Laravel 12 · MySQL 8.4 · Node 26
+- Frontend target: Blade + Alpine.js + Tailwind CSS 4, bundled with Vite.
+- Legacy frontend being removed: Bootstrap 5 (CDN), jQuery (CDN), Sass, Font Awesome (CDN), SweetAlert2. Do not add new code that depends on them.
+- Realtime (planned): Laravel Reverb + laravel-echo. Redis for cache, queues and locks in production.
+- Tests: PHPUnit (already in use; do not switch to Pest).
+
+## Local environment
+- URL: http://matricular.test
+- Database: `matricular` (MySQL, root, 127.0.0.1:3306). Local data is disposable test data.
+- PHP must be Laragon's 8.3 (`D:\laragon\bin\php\php-8.3.37-Win32-vs16-x64`). If `where php` resolves `C:\php` first, stop and warn the user: that build lacks `mbstring` and tests fail.
+
+## Commands
+- install: `composer install && npm install`
+- dev: `npm run dev` (served by Laragon, never `php artisan serve`)
+- test: `php artisan test`
+- lint: `vendor/bin/pint`
+- build: `npm run build`
+
+## Architecture
+- `app/Http/Controllers` – thin controllers (currently fat; being refactored).
+- `app/Enums` – game modes, difficulties, countdown durations.
+- `app/Models` – `User`, `Run`, `Achievement`, `UserAchievement`.
+- `resources/js/main/game-manager.js` – solo game client.
+- Target layout for new code: `app/Actions` or `app/Services` for game logic (word validation, plate generation, scoring), Form Requests for input, Policies for ownership, Events for achievements/broadcasts.
+
+## Project conventions (override global rules)
+- UI copy is in Spanish. Code, comments, commits and technical docs in English.
+- The server is authoritative for everything that affects score: current plate, timers, scoring, word validity. The client only renders.
+- Word input is case-, accent- and diacritic-insensitive for the player (Ñ stays a distinct letter). See `.claude/rules/dictionary.md`.
+- No mascot/illustrated character. Visual identity is built from vehicle/road SVG elements (see `.claude/rules/design.md`).
+
+## Deploy
+- Laravel Forge + one Hetzner Cloud VPS (EU) running Nginx, PHP-FPM, MySQL, Redis, Reverb, queue worker and scheduler. The VPS may host other personal projects.
+- Branch deployed: `main`. Environments: local · production (URL pending).
+
+## External services & integrations
+- Word validation today: unofficial `https://rae-api.com/api/words/{word}` (being replaced by a local dictionary; may remain as fallback only).
+- Planned local dictionary sources: Spanish Wiktionary extracts (kaikki.org, CC BY-SA, attribution required on the site) and Hunspell es_ES (verify license before import).
+- GitHub: https://github.com/Rob-Gon/matricular (private).
+
+## Recommended Claude Code plugins
+From `claude-plugins-official`: laravel-boost, frontend-design, security-guidance, playwright, context7, feature-dev, code-review, pr-review-toolkit, github, claude-md-management. Optional (need npm global installs): php-lsp, typescript-lsp.
+
+## Do not touch
+- `.env` (ask first).
+- Never bulk-download the RAE dictionary or the rae-api.com service.
