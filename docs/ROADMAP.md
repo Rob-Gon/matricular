@@ -131,6 +131,7 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 - [x] A sticker per achievement (`x-sticker`, artwork by `icon` key) in ITV colours by family: general mustard, vowels plate blue, parts of speech glass, hidden signal red; platinum in brushed metal with a shine, a halo of turning rays (still with reduced motion) and a dark card
 
 ### Later
+- [ ] Review the achievement stickers with the owner: some artworks do not convince them yet
 - [ ] Optional Steam-like extras: progress (12/25), rarity (% of players)
 - [ ] Multiplayer unlocks pushed over Reverb in F6
 

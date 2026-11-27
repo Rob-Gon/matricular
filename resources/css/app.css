@@ -489,6 +489,19 @@
         border-radius: 0.35em;
     }
 
+    /* Desktop road: the dashes grow from the vanishing point, so the car seems to drive forward. */
+    .road-dashes {
+        transform-box: view-box;
+        transform-origin: 1280px 200px;
+        animation: road-rush 0.55s linear infinite;
+    }
+
+    @keyframes road-rush {
+        to {
+            transform: scale(1.35);
+        }
+    }
+
     /* Platinum sticker: brushed metal with a slow shine, over a halo of turning light rays. */
     .sticker-platinum {
         background: linear-gradient(120deg, #F6F6F8 0%, #C4C8D0 30%, #FBFBFC 48%, #AFB4BE 70%, #ECEDF1 100%);
