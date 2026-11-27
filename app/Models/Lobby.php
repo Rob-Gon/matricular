@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property LobbyFormats $format
  * @property array<string, mixed> $settings
  * @property string $status
+ * @property list<int>|null $kicked_user_ids
  * @property Carbon $last_activity_at
  * @property-read Collection<int, LobbyPlayer> $players
  */
@@ -43,7 +44,7 @@ class Lobby extends Model
     /**
      * @var list<string>
      */
-    protected $fillable = ['code', 'host_id', 'password', 'format', 'settings', 'status', 'last_activity_at'];
+    protected $fillable = ['code', 'host_id', 'password', 'format', 'settings', 'status', 'kicked_user_ids', 'last_activity_at'];
 
     /**
      * @var list<string>
@@ -58,9 +59,15 @@ class Lobby extends Model
         return [
             'format' => LobbyFormats::class,
             'settings' => 'array',
+            'kicked_user_ids' => 'array',
             'password' => 'hashed',
             'last_activity_at' => 'datetime',
         ];
+    }
+
+    public function wasKicked(User $user): bool
+    {
+        return in_array($user->id, $this->kicked_user_ids ?? [], true);
     }
 
     public function getRouteKeyName(): string

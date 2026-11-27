@@ -59,6 +59,10 @@ class LobbyManager
         }
 
         return $this->change($lobby, function (Lobby $lobby) use ($user): void {
+            if ($lobby->wasKicked($user)) {
+                throw ValidationException::withMessages(['code' => 'El anfitrión te sacó de esta sala y no puedes volver a entrar.']);
+            }
+
             if ($lobby->status !== Lobby::STATUS_WAITING) {
                 throw ValidationException::withMessages(['code' => 'La partida de esa sala ya ha empezado.']);
             }
@@ -83,7 +87,11 @@ class LobbyManager
             throw ValidationException::withMessages(['player' => 'El anfitrión no puede expulsarse a sí mismo.']);
         }
 
-        $this->removePlayer($lobby, $userId);
+        if (! $lobby->players()->where('user_id', $userId)->exists()) {
+            throw ValidationException::withMessages(['player' => 'Ese jugador ya no está en la sala.']);
+        }
+
+        $this->removePlayer($lobby, $userId, kicked: true);
     }
 
     public function setReady(Lobby $lobby, User $user, bool $ready): Lobby
@@ -127,11 +135,15 @@ class LobbyManager
         return $closed;
     }
 
-    private function removePlayer(Lobby $lobby, int $userId): void
+    private function removePlayer(Lobby $lobby, int $userId, bool $kicked = false): void
     {
-        $lobby->getConnection()->transaction(function () use ($lobby, $userId): void {
-            Lobby::whereKey($lobby->id)->lockForUpdate()->first();
+        $lobby->getConnection()->transaction(function () use ($lobby, $userId, $kicked): void {
+            $locked = Lobby::whereKey($lobby->id)->lockForUpdate()->first();
             $lobby->players()->where('user_id', $userId)->delete();
+
+            if ($kicked && $locked !== null) {
+                $lobby->update(['kicked_user_ids' => array_values(array_unique([...$locked->kicked_user_ids ?? [], $userId]))]);
+            }
 
             $next = $lobby->players()->first();
 

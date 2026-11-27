@@ -146,6 +146,20 @@ class LobbyTest extends TestCase
         $this->actingAs($other)->get(route('lobbies.show', $lobby))->assertRedirect();
     }
 
+    public function test_a_kicked_player_cannot_join_that_lobby_again(): void
+    {
+        $lobby = $this->lobby();
+        $guest = User::factory()->create();
+        $this->joinAs($guest, $lobby);
+
+        $this->actingAs($lobby->host)->postJson(route('lobbies.kick', $lobby), ['player' => $guest->id])->assertOk();
+        $this->actingAs($lobby->host)->postJson(route('lobbies.kick', $lobby), ['player' => $guest->id])->assertUnprocessable();
+
+        $this->actingAs($guest)->post(route('lobbies.join'), ['code' => $lobby->code])->assertSessionHasErrors('code');
+        $this->assertFalse($lobby->fresh()?->hasPlayer($guest));
+        $this->assertSame([$guest->id], $lobby->fresh()?->kicked_user_ids);
+    }
+
     public function test_players_set_their_colour_and_ready_state(): void
     {
         $lobby = $this->lobby();
