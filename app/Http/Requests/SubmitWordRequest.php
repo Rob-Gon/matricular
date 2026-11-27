@@ -12,7 +12,8 @@ class SubmitWordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'word' => ['required', 'string', 'min:3', 'max:50'],
+            // Letters only (accents, diaeresis and Ñ included): no digits, spaces or symbols.
+            'word' => ['required', 'string', 'min:3', 'max:50', 'regex:/^\p{L}+$/u'],
         ];
     }
 
@@ -25,6 +26,7 @@ class SubmitWordRequest extends FormRequest
             'word.required' => 'La palabra es requerida.',
             'word.min' => 'La palabra debe tener al menos 3 caracteres.',
             'word.max' => 'La palabra no debe exceder los 50 caracteres.',
+            'word.regex' => 'La palabra solo puede contener letras.',
         ];
     }
 }

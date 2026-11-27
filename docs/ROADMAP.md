@@ -2,7 +2,7 @@
 
 Update this file at the end of every task: tick what is done, add findings, move new ideas to the backlog.
 
-## Current phase: F1 – Fixes & hardening (PR 1 of 4 done)
+## Current phase: F1 – Fixes & hardening (PR 1–2 of 4 done)
 
 ## F0 – Foundation
 - [x] Project `CLAUDE.md` and `.claude/rules/` (game, dictionary, realtime, design)
@@ -34,9 +34,10 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] `runs.user_id` foreign key cascades, so deleting an account with runs no longer fails
 
 ### PR 2 · `fix/word-normalization`
-- [ ] Accent/case-insensitive input with Ñ kept (`WordNormalizer`, intl `Normalizer`)
-- [ ] API needs accents ("camion" → NOT_FOUND with suggestion "camión"): accept when a suggestion normalizes to the same key
-- [ ] Cache dictionary answers (30 days)
+- [x] Accent/case-insensitive input with Ñ kept (`WordNormalizer`, intl `Normalizer`); words stored and de-duplicated by key
+- [x] API needs accents ("camion" → NOT_FOUND with suggestion "camión"): accept when a suggestion normalizes to the same key
+- [x] Cache dictionary answers (30 days, outages not cached)
+- [x] Words must be letters only (`\p{L}+`), rejected before scoring
 
 ### PR 3 · `fix/auth-hardening`
 - [ ] Form Requests for login/register/profile; rate limiting on login and register

@@ -6,6 +6,7 @@ use App\Enums\GameDifficulties;
 use App\Models\Run;
 use App\Services\PlateGenerator;
 use App\Services\RaeDictionary;
+use App\Support\WordNormalizer;
 
 class SubmitWord
 {
@@ -27,7 +28,8 @@ class SubmitWord
                 return ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true];
             }
 
-            $word = mb_strtoupper(trim($input));
+            // Stored and compared by key, so "camión" and "camion" are the same word.
+            $word = WordNormalizer::key($input);
             $plate = $run->plateLetters();
             $penalty = 'Has perdido '.Run::POINTS_PENALTY.' puntos.';
 
@@ -43,7 +45,8 @@ class SubmitWord
                 return $this->reject($run, $word, "¡Fallo! En modo difícil, las letras deben aparecer en el mismo orden. {$penalty}");
             }
 
-            $exists = $this->dictionary->exists($word);
+            // The raw input keeps any accents the player typed, which saves the API a suggestion round.
+            $exists = $this->dictionary->exists($input);
 
             if ($exists === null) {
                 return ['success' => false, 'message' => 'No se ha podido verificar la palabra. Inténtalo de nuevo, no has perdido puntos.'];
