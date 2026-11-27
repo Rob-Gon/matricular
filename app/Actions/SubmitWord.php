@@ -6,7 +6,6 @@ use App\Enums\GameDifficulties;
 use App\Models\Run;
 use App\Services\PlateGenerator;
 use App\Services\RaeDictionary;
-use Illuminate\Support\Facades\DB;
 
 class SubmitWord
 {
@@ -22,11 +21,8 @@ class SubmitWord
      */
     public function handle(Run $run, string $input): array
     {
-        return DB::transaction(function () use ($run, $input): array {
-            // Lock the row so two quick submissions cannot both score or both read the old plate.
-            Run::whereKey($run->getKey())->lockForUpdate()->first();
-            $run->refresh();
-
+        // Locked so two quick submissions cannot both score or both read the old plate.
+        return $run->withLock(function () use ($run, $input): array {
             if ($run->isOver()) {
                 return ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true];
             }

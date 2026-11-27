@@ -92,17 +92,19 @@ class GameController extends Controller
     {
         Gate::authorize('play', $run);
 
-        if ($run->isOver()) {
-            return $this->gameResponse($run, ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true], 409);
-        }
+        return $run->withLock(function () use ($run, $plates): JsonResponse {
+            if ($run->isOver()) {
+                return $this->gameResponse($run, ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true], 409);
+            }
 
-        $run->skipPlate($plates->generate(GameDifficulties::from($run->difficulty)));
-        $run->save();
+            $run->skipPlate($plates->generate(GameDifficulties::from($run->difficulty)));
+            $run->save();
 
-        return $this->gameResponse($run, [
-            'success' => false,
-            'message' => '¡Imposible! La matrícula ha cambiado. Has perdido '.Run::POINTS_PENALTY.' puntos.',
-        ]);
+            return $this->gameResponse($run, [
+                'success' => false,
+                'message' => '¡Imposible! La matrícula ha cambiado. Has perdido '.Run::POINTS_PENALTY.' puntos.',
+            ]);
+        });
     }
 
     /**
@@ -112,8 +114,10 @@ class GameController extends Controller
     {
         Gate::authorize('play', $run);
 
-        $run->ended_at ??= now();
-        $run->save();
+        $run->withLock(function () use ($run): void {
+            $run->ended_at ??= now();
+            $run->save();
+        });
 
         return $this->gameResponse($run, ['success' => true, 'message' => 'Partida terminada.', 'game_over' => true]);
     }

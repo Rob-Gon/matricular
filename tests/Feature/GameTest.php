@@ -193,6 +193,22 @@ class GameTest extends TestCase
         $this->assertSame([['B', 'R', 'C']], $run->fresh()->chars_skipped);
     }
 
+    public function test_locked_updates_start_from_the_latest_row_instead_of_a_stale_copy(): void
+    {
+        $run = Run::factory()->create(['plate' => 'BRC', 'score' => 0]);
+        $stale = Run::find($run->id);
+
+        // Another request scores in the meantime.
+        Run::whereKey($run->id)->update(['score' => Run::POINTS_CORRECT]);
+
+        $stale->withLock(function () use ($stale) {
+            $stale->skipPlate('DFG');
+            $stale->save();
+        });
+
+        $this->assertSame(Run::POINTS_CORRECT - Run::POINTS_PENALTY, $run->fresh()->score);
+    }
+
     public function test_an_ended_run_accepts_no_more_words_and_cannot_be_reopened(): void
     {
         Http::fake();

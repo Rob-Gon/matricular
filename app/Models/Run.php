@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -89,6 +90,25 @@ class Run extends Model
         $query->where(fn (Builder $query) => $query
             ->whereJsonLength('words_correct', '>', 0)
             ->orWhereJsonLength('words_error', '>', 0));
+    }
+
+    /**
+     * Runs the callback in a transaction with this run's row locked and reloaded, so concurrent
+     * requests on the same run (word, plate change, end) cannot overwrite each other's score.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public function withLock(callable $callback): mixed
+    {
+        return DB::transaction(function () use ($callback) {
+            static::whereKey($this->getKey())->lockForUpdate()->first();
+            $this->refresh();
+
+            return $callback();
+        });
     }
 
     public function isOver(): bool
