@@ -37,7 +37,7 @@ Letter set and ordered letters work as in solo. Scoring is the solo one (+10 / �
 ## Lobbies
 - 2–16 players, registered users only. Host configures the settings, players mark "ready", the server sets `starts_at`/`ends_at`.
 - Join by short code only (no public list for now); optional password stored hashed. No joining once the match has started (no spectators).
-- If the host leaves, the player who has been in the lobby longest becomes host. The host can kick players.
+- If the host leaves, the player who has been in the lobby longest becomes host. The host can kick players; a kicked player cannot rejoin that lobby.
 - Each player picks a car colour on the starting grid.
 - "Revancha" restarts the lobby with the same players after a match. A lobby with no activity for 30 minutes closes.
 - Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn button: a random horn sound for everyone, once every 5 s per player; anyone can mute other players' horns in the sound menu.

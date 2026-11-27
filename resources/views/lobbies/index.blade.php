@@ -17,7 +17,7 @@
 
             @if ($current)
                 <div class="paper flex flex-wrap items-center justify-between gap-4 p-6">
-                    <p class="text-xl font-bold">Ya estás en la sala <x-plate :letters="substr($current->code, 4)" :digits="substr($current->code, 0, 4)" scale="0.4" class="mx-1 align-middle" />. Si creas o entras en otra, saldrás de ella.</p>
+                    <p class="text-xl font-bold">Ya estás en la sala <x-plate :letters="substr($current->code, 4)" :digits="substr($current->code, 0, 4)" scale="0.4" class="mx-1 align-middle" /> Si creas o entras en otra, saldrás de ella.</p>
                     <a class="btn btn-primary" href="{{ route('lobbies.show', $current) }}">Volver a la sala</a>
                 </div>
             @endif

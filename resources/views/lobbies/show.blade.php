@@ -126,7 +126,7 @@
         <dialog x-ref="kickDialog" aria-labelledby="kick-title" class="paper surface-light m-auto w-[min(28rem,calc(100vw-2rem))] p-7 backdrop:bg-black/60" @close="kickTarget = null">
             <div class="flex flex-col gap-5">
                 <h2 id="kick-title" class="font-display text-3xl">¿Expulsar a <span x-text="kickTarget?.name"></span>?</h2>
-                <p class="text-xl">Saldrá de la parrilla. Podrá volver a entrar con el código mientras la carrera no haya empezado.</p>
+                <p class="text-xl">Saldrá de la parrilla y no podrá volver a entrar en esta sala.</p>
                 <div class="flex flex-wrap gap-4">
                     <button type="button" class="btn btn-danger" :disabled="busy" @click="kick()">Expulsar</button>
                     <button type="button" class="btn" @click="$refs.kickDialog.close()">Cancelar</button>
