@@ -10,6 +10,8 @@ Route::get('/', function () {
     return view('app.home');
 })->name('home.view');
 
+Route::view('/creditos', 'app.credits')->name('credits.view');
+
 // Rutas para usuarios no autenticados
 Route::middleware('guest')->group(function () {
 

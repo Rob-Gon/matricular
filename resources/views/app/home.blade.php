@@ -75,6 +75,7 @@
                 <div class="row align-items-center">
                     <div class="col-md-6">
                         <span class="text-muted">© {{ date('Y') }} Matricular. Todos los derechos reservados.</span>
+                        <a href="{{ route('credits.view') }}" class="ms-2">Créditos</a>
                     </div>
                     <div class="col-md-6">
                         <div class="social-links">
