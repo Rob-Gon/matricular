@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\GameDifficulties;
+use App\Enums\LetterSets;
 use App\Models\Achievement;
 use App\Models\Run;
 use App\Models\User;
@@ -81,12 +81,15 @@ class AchievementTest extends TestCase
     public function test_score_milestones(): void
     {
         $easy = Run::factory()->create(['plate' => 'BRC', 'score' => 495]);
-        $hard = Run::factory()->difficulty(GameDifficulties::DIFICIL)->create(['plate' => 'BRC', 'score' => 245]);
+        $hard = Run::factory()->settings(LetterSets::FULL, ordered: true)->create(['plate' => 'BRC', 'score' => 245]);
+        $unordered = Run::factory()->settings(LetterSets::FULL)->create(['plate' => 'BRC', 'score' => 245]);
 
         $this->actingAs($easy->user)->postJson(route('game.check-word', $easy), ['word' => 'barco'])
             ->assertJsonPath('achievements.0.key', 'high_score');
         $this->actingAs($hard->user)->postJson(route('game.check-word', $hard), ['word' => 'barco'])
             ->assertJsonPath('achievements.0.key', 'hard_high_score');
+        $this->actingAs($unordered->user)->postJson(route('game.check-word', $unordered), ['word' => 'barco'])
+            ->assertJsonPath('achievements', []);
     }
 
     public function test_ending_the_first_game_with_a_word_unlocks_first_game(): void

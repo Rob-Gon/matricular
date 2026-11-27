@@ -2,7 +2,6 @@
 
 namespace App\Actions;
 
-use App\Enums\GameDifficulties;
 use App\Models\Run;
 use App\Services\Dictionary;
 use App\Services\PlateGenerator;
@@ -42,8 +41,8 @@ class SubmitWord
                 return $this->reject($run, $word, "¡Fallo! La palabra no contiene todas las letras de la matrícula. {$penalty}");
             }
 
-            if ($run->difficulty === GameDifficulties::DIFICIL->value && ! $this->containsInOrder($word, $plate)) {
-                return $this->reject($run, $word, "¡Fallo! En modo difícil, las letras deben aparecer en el mismo orden. {$penalty}");
+            if ($run->ordered && ! $this->containsInOrder($word, $plate)) {
+                return $this->reject($run, $word, "¡Fallo! Las letras deben aparecer en el orden de la matrícula. {$penalty}");
             }
 
             // The raw input keeps any accents the player typed, which saves the API a suggestion round.
@@ -58,7 +57,7 @@ class SubmitWord
             }
 
             $run->addCorrectWord($word);
-            $run->plate = $this->plates->generate(GameDifficulties::from($run->difficulty));
+            $run->plate = $this->plates->generate($run->letter_set, $run->ordered);
             $run->save();
 
             return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'word' => $word];

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LetterSets;
 use Database\Factories\RunFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,8 @@ use Illuminate\Support\Facades\DB;
  * @property int $user_id
  * @property int $score
  * @property string $mode
- * @property string $difficulty
+ * @property LetterSets $letter_set
+ * @property bool $ordered
  * @property string|null $countdown_time
  * @property string|null $plate
  * @property Carbon|null $ends_at
@@ -46,7 +48,8 @@ class Run extends Model
         'user_id',
         'score',
         'mode',
-        'difficulty',
+        'letter_set',
+        'ordered',
         'countdown_time',
         'plate',
         'ends_at',
@@ -62,6 +65,8 @@ class Run extends Model
     protected function casts(): array
     {
         return [
+            'letter_set' => LetterSets::class,
+            'ordered' => 'boolean',
             'words_correct' => 'array',
             'words_error' => 'array',
             'chars_skipped' => 'array',

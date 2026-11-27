@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\SubmitWord;
 use App\Enums\CountdownModes;
-use App\Enums\GameDifficulties;
+use App\Enums\GameModes;
 use App\Http\Requests\StartGameRequest;
 use App\Http\Requests\SubmitWordRequest;
 use App\Models\Run;
@@ -13,6 +13,7 @@ use App\Services\PlateGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class GameController extends Controller
@@ -28,9 +29,10 @@ class GameController extends Controller
             'user_id' => $request->user()->id,
             'score' => 0,
             'mode' => $request->mode()->value,
-            'difficulty' => $request->difficulty()->value,
+            'letter_set' => $request->letterSet(),
+            'ordered' => $request->ordered(),
             'countdown_time' => $countdown?->value,
-            'plate' => $plates->generate($request->difficulty()),
+            'plate' => $plates->generate($request->letterSet(), $request->ordered()),
             'ends_at' => $countdown ? now()->addSeconds($countdown->seconds()) : null,
             'words_correct' => [],
             'words_error' => [],
@@ -59,19 +61,13 @@ class GameController extends Controller
     }
 
     /**
-     * Devuelve la vista de modos de cuenta atrás para AJAX
+     * Game settings screen. The menu may preselect a mode with ?mode=.
      */
-    public function countdownModesView(): View
+    public function setup(Request $request): View
     {
-        return view('components.countdown-modes');
-    }
-
-    /**
-     * Devuelve la vista de dificultades para AJAX
-     */
-    public function difficultyModesView(): View
-    {
-        return view('components.difficulty-modes');
+        return view('main.setup', [
+            'mode' => GameModes::tryFrom((string) $request->query('mode')) ?? GameModes::CONTRARELOJ,
+        ]);
     }
 
     /**
@@ -102,7 +98,7 @@ class GameController extends Controller
                 return $this->gameResponse($run, ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true], 409);
             }
 
-            $run->skipPlate($plates->generate(GameDifficulties::from($run->difficulty)));
+            $run->skipPlate($plates->generate($run->letter_set, $run->ordered));
             $run->save();
 
             return $this->gameResponse($run, [

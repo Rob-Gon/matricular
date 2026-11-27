@@ -50,7 +50,7 @@ return [
     [
         'key' => 'hard_high_score',
         'name' => 'Matricúlame esta',
-        'description' => 'Consigue 250 puntos en una sola partida en modo difícil',
+        'description' => 'Consigue 250 puntos en una sola partida con todas las letras y en orden',
         'icon' => 'speedometer',
         'hidden' => false,
         'class' => HardHighScore::class,

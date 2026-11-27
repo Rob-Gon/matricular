@@ -3,7 +3,7 @@
 namespace App\Achievements;
 
 use App\Achievements\Contracts\WordAchievement;
-use App\Enums\GameDifficulties;
+use App\Enums\LetterSets;
 use App\Models\Run;
 
 class HardHighScore implements WordAchievement
@@ -12,6 +12,6 @@ class HardHighScore implements WordAchievement
 
     public function isUnlockedByWord(Run $run, string $word): bool
     {
-        return $run->difficulty === GameDifficulties::DIFICIL->value && $run->score >= self::SCORE;
+        return $run->letter_set === LetterSets::FULL && $run->ordered && $run->score >= self::SCORE;
     }
 }

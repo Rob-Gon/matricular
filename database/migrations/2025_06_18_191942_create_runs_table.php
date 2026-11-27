@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\CountdownModes;
-use App\Enums\GameDifficulties;
 use App\Enums\GameModes;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -19,7 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->integer('score')->default(0);
             $table->enum('mode', [GameModes::CONTRARELOJ->value(), GameModes::INFINITO->value()])->default(GameModes::CONTRARELOJ->value());
-            $table->enum('difficulty', [GameDifficulties::FACIL->value(), GameDifficulties::MEDIO->value(), GameDifficulties::DIFICIL->value()])->default(GameDifficulties::FACIL->value());
+            $table->enum('difficulty', ['Facil', 'Medio', 'Dificil'])->default('Facil');
             $table->enum('countdown_time', [CountdownModes::TREINTA_SEGUNDOS->value(), CountdownModes::UN_MINUTO->value(), CountdownModes::DOS_MINUTOS->value(), CountdownModes::TRES_MINUTOS->value(), CountdownModes::CUATRO_MINUTOS->value(), CountdownModes::CINCO_MINUTOS->value()])->nullable();
             $table->json('words_correct')->nullable();
             $table->json('words_error')->nullable();

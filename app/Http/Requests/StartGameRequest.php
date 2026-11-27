@@ -3,8 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Enums\CountdownModes;
-use App\Enums\GameDifficulties;
 use App\Enums\GameModes;
+use App\Enums\LetterSets;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -19,7 +19,8 @@ class StartGameRequest extends FormRequest
     {
         return [
             'mode' => ['required', Rule::enum(GameModes::class)],
-            'difficulty' => ['required', Rule::enum(GameDifficulties::class)],
+            'letter_set' => ['required', Rule::enum(LetterSets::class)],
+            'ordered' => ['required', 'boolean'],
             'countdown_time' => [
                 'nullable',
                 Rule::requiredIf($this->input('mode') === GameModes::CONTRARELOJ->value),
@@ -33,9 +34,14 @@ class StartGameRequest extends FormRequest
         return GameModes::from($this->validated('mode'));
     }
 
-    public function difficulty(): GameDifficulties
+    public function letterSet(): LetterSets
     {
-        return GameDifficulties::from($this->validated('difficulty'));
+        return LetterSets::from($this->validated('letter_set'));
+    }
+
+    public function ordered(): bool
+    {
+        return $this->boolean('ordered');
     }
 
     /** Only countdown games have a duration; the field is ignored otherwise. */
@@ -48,9 +54,9 @@ class StartGameRequest extends FormRequest
 
     protected function failedValidation(Validator $validator): never
     {
-        // The menu only displays flashed errors, not the validation bag.
+        // Every field is a preset choice, so a single flashed error is enough.
         throw new HttpResponseException(
-            redirect()->route('menu.view')->with('error', 'Error: datos de la partida incompletos o no válidos.')
+            redirect()->route('game.setup')->with('error', 'Error: datos de la partida incompletos o no válidos.')
         );
     }
 }

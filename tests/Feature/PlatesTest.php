@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\GameDifficulties;
+use App\Enums\LetterSets;
 use App\Services\PlateGenerator;
 use App\Support\WordNormalizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -64,27 +64,28 @@ class PlatesTest extends TestCase
         ]);
         $generator = app(PlateGenerator::class);
 
-        // Easy: simple letters only; medium: any letters; hard: counted in plate order.
-        $this->assertSame('BRC', $generator->generate(GameDifficulties::FACIL));
-        $this->assertContains($generator->generate(GameDifficulties::MEDIO), ['BRC', 'XYZ']);
-        $this->assertContains($generator->generate(GameDifficulties::DIFICIL), ['XYZ', 'DFG']);
+        // Simple letters skip XYZ; ordered games count solutions in plate order.
+        $this->assertSame('BRC', $generator->generate(LetterSets::SIMPLE, false));
+        $this->assertContains($generator->generate(LetterSets::FULL, false), ['BRC', 'XYZ']);
+        $this->assertSame('DFG', $generator->generate(LetterSets::SIMPLE, true));
+        $this->assertContains($generator->generate(LetterSets::FULL, true), ['XYZ', 'DFG']);
     }
 
     public function test_the_generator_falls_back_to_random_letters_without_the_plates_table(): void
     {
-        $this->assertMatchesRegularExpression('/^[BCDFGHJLMNPRST]{3}$/', app(PlateGenerator::class)->generate(GameDifficulties::FACIL));
+        $this->assertMatchesRegularExpression('/^[BCDFGHJLMNPRST]{3}$/', app(PlateGenerator::class)->generate(LetterSets::SIMPLE, false));
     }
 
     public function test_rebuilding_refreshes_the_generator_cache(): void
     {
         $generator = app(PlateGenerator::class);
-        $generator->generate(GameDifficulties::FACIL);
+        $generator->generate(LetterSets::SIMPLE, false);
 
         $this->addWords(array_map(fn (int $i) => 'barco'.str_repeat('a', $i), range(1, PlateGenerator::MIN_SOLUTIONS)));
         $this->artisan('dictionary:plates')->assertSuccessful();
 
         // Any arrangement of B, R and C now has enough solutions.
-        $letters = str_split($generator->generate(GameDifficulties::FACIL));
+        $letters = str_split($generator->generate(LetterSets::SIMPLE, false));
         sort($letters);
         $this->assertSame(['B', 'C', 'R'], $letters);
     }

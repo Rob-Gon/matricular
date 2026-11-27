@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\CountdownModes;
-use App\Enums\GameDifficulties;
 use App\Enums\GameModes;
+use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +27,8 @@ class GameTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('game.start'), [
             'mode' => GameModes::CONTRARELOJ->value,
-            'difficulty' => GameDifficulties::FACIL->value,
+            'letter_set' => LetterSets::SIMPLE->value,
+            'ordered' => '0',
             'countdown_time' => CountdownModes::UN_MINUTO->value,
         ]);
 
@@ -36,13 +37,43 @@ class GameTest extends TestCase
         $this->assertTrue($run->user->is($user));
         $this->assertMatchesRegularExpression('/^[BCDFGHJLMNPRST]{3}$/', $run->plate);
         $this->assertEqualsWithDelta(now()->addMinute()->timestamp, $run->ends_at->timestamp, 2);
+        $this->assertSame(LetterSets::SIMPLE, $run->letter_set);
+        $this->assertFalse($run->ordered);
+    }
+
+    public function test_start_stores_the_chosen_letter_settings(): void
+    {
+        $this->actingAs(User::factory()->create())->post(route('game.start'), [
+            'mode' => GameModes::INFINITO->value,
+            'letter_set' => LetterSets::FULL->value,
+            'ordered' => '1',
+        ]);
+
+        $run = Run::sole();
+        $this->assertSame(LetterSets::FULL, $run->letter_set);
+        $this->assertTrue($run->ordered);
+    }
+
+    public function test_setup_screen_preselects_the_mode_from_the_menu(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('game.setup', ['mode' => GameModes::INFINITO->value]))
+            ->assertOk()
+            ->assertSee('Prepara el viaje')
+            ->assertViewHas('mode', GameModes::INFINITO);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('game.setup', ['mode' => 'nope']))
+            ->assertOk()
+            ->assertViewHas('mode', GameModes::CONTRARELOJ);
     }
 
     public function test_infinite_run_has_no_deadline_even_if_a_time_is_sent(): void
     {
         $this->actingAs(User::factory()->create())->post(route('game.start'), [
             'mode' => GameModes::INFINITO->value,
-            'difficulty' => GameDifficulties::MEDIO->value,
+            'letter_set' => LetterSets::FULL->value,
+            'ordered' => '0',
             'countdown_time' => CountdownModes::UN_MINUTO->value,
         ]);
 
@@ -54,8 +85,8 @@ class GameTest extends TestCase
     public function test_start_rejects_invalid_settings(): void
     {
         $this->actingAs(User::factory()->create())
-            ->post(route('game.start'), ['mode' => GameModes::CONTRARELOJ->value, 'difficulty' => 'Imposible'])
-            ->assertRedirect(route('menu.view'));
+            ->post(route('game.start'), ['mode' => GameModes::CONTRARELOJ->value, 'letter_set' => 'imposible', 'ordered' => '0'])
+            ->assertRedirect(route('game.setup'));
 
         $this->assertDatabaseCount('runs', 0);
     }
@@ -109,10 +140,10 @@ class GameTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_hard_difficulty_requires_the_letters_in_plate_order(): void
+    public function test_ordered_games_require_the_letters_in_plate_order(): void
     {
         $this->fakeDictionary(true);
-        $run = Run::factory()->difficulty(GameDifficulties::DIFICIL)->create(['plate' => 'CRB']);
+        $run = Run::factory()->settings(LetterSets::SIMPLE, ordered: true)->create(['plate' => 'CRB']);
 
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'barco'])
             ->assertJson(['success' => false, 'score' => -Run::POINTS_PENALTY]);

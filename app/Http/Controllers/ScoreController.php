@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CountdownModes;
+use App\Enums\GameModes;
+use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ScoreController extends Controller
@@ -33,24 +38,30 @@ class ScoreController extends Controller
     }
 
     /**
-     * Devuelve las puntuaciones filtradas por modo, dificultad y tiempo (AJAX)
+     * Top scores filtered by mode, settings and countdown time (AJAX)
      */
-    public function filter(Request $request)
+    public function filter(Request $request): JsonResponse
     {
-        $mode = $request->input('mode');
-        $difficulty = $request->input('difficulty');
-        $time = $request->input('time');
+        $filters = $request->validate([
+            'mode' => ['nullable', Rule::enum(GameModes::class)],
+            'letter_set' => ['nullable', Rule::enum(LetterSets::class)],
+            'ordered' => ['nullable', 'boolean'],
+            'time' => ['nullable', Rule::enum(CountdownModes::class)],
+        ]);
 
         $query = $this->topScoresQuery();
 
-        if ($mode) {
-            $query->where('runs.mode', $mode);
+        if (isset($filters['mode'])) {
+            $query->where('runs.mode', $filters['mode']);
         }
-        if ($difficulty) {
-            $query->where('runs.difficulty', $difficulty);
+        if (isset($filters['letter_set'])) {
+            $query->where('runs.letter_set', $filters['letter_set']);
         }
-        if ($mode === 'Contrareloj' && $time) {
-            $query->where('runs.countdown_time', $time);
+        if (isset($filters['ordered'])) {
+            $query->where('runs.ordered', $request->boolean('ordered'));
+        }
+        if (($filters['mode'] ?? null) === GameModes::CONTRARELOJ->value && isset($filters['time'])) {
+            $query->where('runs.countdown_time', $filters['time']);
         }
 
         return response()->json(['topScores' => $query->get()]);

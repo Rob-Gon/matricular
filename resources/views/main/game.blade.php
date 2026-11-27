@@ -110,7 +110,8 @@
             <form method="POST" action="{{ route('game.start') }}" class="d-inline">
                 @csrf
                 <input type="hidden" name="mode" value="{{ $run->mode }}">
-                <input type="hidden" name="difficulty" value="{{ $run->difficulty }}">
+                <input type="hidden" name="letter_set" value="{{ $run->letter_set->value }}">
+                <input type="hidden" name="ordered" value="{{ (int) $run->ordered }}">
                 <input type="hidden" name="countdown_time" value="{{ $run->countdown_time }}">
                 <button type="submit" class="btn btn-primary m-2">Volver a jugar</button>
             </form>

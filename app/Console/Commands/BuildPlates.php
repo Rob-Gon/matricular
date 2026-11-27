@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\GameDifficulties;
+use App\Enums\LetterSets;
 use App\Services\PlateGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -77,8 +77,9 @@ class BuildPlates extends Command
             }
         });
 
-        foreach (GameDifficulties::cases() as $difficulty) {
-            Cache::forget(PlateGenerator::CACHE_PREFIX.$difficulty->value);
+        foreach (LetterSets::cases() as $letterSet) {
+            Cache::forget(PlateGenerator::cacheKey($letterSet, false));
+            Cache::forget(PlateGenerator::cacheKey($letterSet, true));
         }
 
         $playable = collect($rows)->where('solutions', '>=', PlateGenerator::MIN_SOLUTIONS)->count();
