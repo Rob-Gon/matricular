@@ -3,13 +3,12 @@
 namespace App\Achievements;
 
 use App\Achievements\Contracts\WordAchievement;
-use App\Models\Run;
 
 class Palindrome implements WordAchievement
 {
-    public function isUnlockedByWord(Run $run, string $word): bool
+    public function isUnlockedByWord(WordPlay $play): bool
     {
         // Accepted words are normalized keys (no accents), so "reconocer" compares letter by letter.
-        return implode('', array_reverse(mb_str_split($word))) === $word;
+        return $play->accepted() && implode('', array_reverse(mb_str_split($play->key()))) === $play->key();
     }
 }

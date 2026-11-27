@@ -4,14 +4,13 @@ namespace App\Achievements;
 
 use App\Achievements\Contracts\WordAchievement;
 use App\Enums\LetterSets;
-use App\Models\Run;
 
 class HardHighScore implements WordAchievement
 {
     private const SCORE = 250;
 
-    public function isUnlockedByWord(Run $run, string $word): bool
+    public function isUnlockedByWord(WordPlay $play): bool
     {
-        return $run->letter_set === LetterSets::FULL && $run->ordered && $run->score >= self::SCORE;
+        return $play->run->letter_set === LetterSets::FULL && $play->run->ordered && $play->run->score >= self::SCORE;
     }
 }

@@ -51,6 +51,19 @@ class Dictionary
     }
 
     /**
+     * Parts of speech of a word key, through any of its spellings or their lemmas.
+     *
+     * @return list<string>
+     */
+    public function categories(string $key): array
+    {
+        $words = DB::table('words')->where('key', $key)->get(['form', 'lemma']);
+        $names = $words->pluck('form')->merge($words->pluck('lemma'))->unique()->values()->all();
+
+        return DB::table('word_categories')->whereIn('word', $names)->distinct()->orderBy('pos')->pluck('pos')->all();
+    }
+
+    /**
      * Stores only the word, its lemma and categories (never definitions).
      *
      * @param  array{form: string, lemma: string, categories: list<string>}  $entry

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Achievements\WordPlay;
 use App\Actions\SubmitWord;
 use App\Enums\CountdownModes;
 use App\Enums\GameModes;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 
 class GameController extends Controller
@@ -77,9 +79,10 @@ class GameController extends Controller
         Gate::authorize('play', $run);
 
         $result = $submitWord->handle($run, $request->validated('word'));
+        $attempt = Arr::pull($result, 'attempt');
 
-        if (isset($result['word'])) {
-            $achievements->afterWord($run, $result['word']);
+        if ($attempt !== null) {
+            $achievements->afterWord(new WordPlay($run, $attempt));
         }
 
         return $this->gameResponse($run, $result, isset($result['game_over']) ? 409 : 200, $achievements->unlocked());
@@ -168,7 +171,7 @@ class GameController extends Controller
     }
 
     /**
-     * @param  array{success: bool, message: string, game_over?: bool, word?: string, summary_url?: string}  $result
+     * @param  array{success: bool, message: string, game_over?: bool, summary_url?: string}  $result
      * @param  list<array{key: string, name: string, description: string, icon: string}>  $achievements  Unlocked by this request
      */
     private function gameResponse(Run $run, array $result, int $status = 200, array $achievements = []): JsonResponse

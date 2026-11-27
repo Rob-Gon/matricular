@@ -3,14 +3,14 @@
 namespace App\Achievements;
 
 use App\Achievements\Contracts\WordAchievement;
-use App\Models\Run;
 
 class HighScore implements WordAchievement
 {
     private const SCORE = 500;
 
-    public function isUnlockedByWord(Run $run, string $word): bool
+    public function isUnlockedByWord(WordPlay $play): bool
     {
-        return $run->score >= self::SCORE;
+        // Only countdowns: an infinite run reaches any score given time.
+        return $play->run->countdown_time !== null && $play->run->score >= self::SCORE;
     }
 }

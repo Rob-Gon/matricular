@@ -3,14 +3,13 @@
 namespace App\Achievements;
 
 use App\Achievements\Contracts\WordAchievement;
-use App\Models\Run;
 
 class LongWord implements WordAchievement
 {
     private const MIN_LENGTH = 12;
 
-    public function isUnlockedByWord(Run $run, string $word): bool
+    public function isUnlockedByWord(WordPlay $play): bool
     {
-        return mb_strlen($word) >= self::MIN_LENGTH;
+        return $play->accepted() && mb_strlen($play->key()) >= self::MIN_LENGTH;
     }
 }

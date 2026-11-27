@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Achievements\Contracts\RunAchievement;
 use App\Achievements\Contracts\WordAchievement;
+use App\Achievements\WordPlay;
 use App\Models\Achievement;
 use App\Models\Run;
 use Closure;
@@ -23,9 +24,9 @@ class AchievementUnlocker
     /** @var list<array{key: string, name: string, description: string, icon: string}> */
     private array $unlocked = [];
 
-    public function afterWord(Run $run, string $word): void
+    public function afterWord(WordPlay $play): void
     {
-        $this->evaluate($run, WordAchievement::class, fn (WordAchievement $achievement) => $achievement->isUnlockedByWord($run, $word));
+        $this->evaluate($play->run, WordAchievement::class, fn (WordAchievement $achievement) => $achievement->isUnlockedByWord($play));
     }
 
     public function afterRun(Run $run): void

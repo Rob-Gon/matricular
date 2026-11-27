@@ -115,11 +115,24 @@ Done 2026-11-27 in five PRs plus follow-ups (skip key, desktop road in perspecti
 - [x] Suggestions: `dictionary:plates` keeps the six shortest headwords per plate (`plates.examples` / `examples_ordered`); only words that are their own lemma and appear in Wiktionary, which drops conjugations, abbreviations and rare spellings. The owner chose "shortest" over a word-frequency list
 
 ## F5 – Achievements (foundation done in F1 · PR 4)
-- [ ] Review and redefine the achievement list with the user
-- [ ] Part-of-speech achievements after F2: 5 nouns / adjectives / verbs in a row ("Bachillerato de letras / artes / ciencias")
-- [ ] Run achievements for countdowns that expire with the tab closed (today only checked when the client calls `game.end`)
+List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
+
+### PR 1 · `feat/achievements-v2`
+- [x] Word achievements see every attempt (`WordPlay`: run, attempt, shared history loaded once); accepted words store their parts of speech (`run_words.categories`)
+- [x] New: "Sustantívame / Adjetívame / Verbéame esta" (10 nouns / adjectives / verbs in one run), "Murciégalo" (five vowels), "Abracadabra" (one vowel at least four times)
+- [x] New hidden: "Abro hilo" (noun, adjective and verb accepted in a row, any order), "Más malo que pegarle a un padre" (run ends below zero), "Buen intento, perro" / "Ratita de la RAE" (trap words `pneumonoultramicroscopicsilicovolcanoconiosis` / `electroencefalografista`: refused even if a dictionary has them, −5, never learned)
+- [x] Palindrome renamed "Se es o no se es"; "Matriculando fuerte" (500) only counts in countdowns
+- [x] Run achievements for countdowns that expire with the tab closed (done in F3: the summary closes the run)
+
+### PR 2 · `feat/custom-countdown`
+- [ ] Custom countdown from 1 to 60 minutes; not eligible for "Matriculando fuerte"; rankings show it only under its own "Personalizado" duration filter
+
+### PR 3 · `feat/achievement-stickers`
+- [ ] A sticker per achievement (icon artwork by `icon` key); platinum with a light halo, animation and platinum colour
+
+### Later
 - [ ] Optional Steam-like extras: progress (12/25), rarity (% of players)
-- [ ] Toast moves to Alpine in F3; multiplayer unlocks pushed over Reverb in F6
+- [ ] Multiplayer unlocks pushed over Reverb in F6
 
 ## F6 – Multiplayer
 - [ ] Reverb + Echo setup, lobby create/join (code + optional password), presence and ready state
