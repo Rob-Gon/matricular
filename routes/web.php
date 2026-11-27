@@ -4,6 +4,8 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ScoreController;
+use App\Models\Run;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -43,8 +45,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [AuthController::class, 'deleteProfile'])->name('profile.delete');
 
     // Menú
-    Route::get('/menu', function () {
-        return view('main.menu');
+    Route::get('/menu', function (Request $request) {
+        $runs = Run::attempted()->whereBelongsTo($request->user());
+
+        return view('main.menu', [
+            'best' => (int) $runs->clone()->max('score'),
+            'played' => $runs->count(),
+        ]);
     })->name('menu.view');
 
     // Juego
@@ -63,7 +70,6 @@ Route::middleware('auth')->group(function () {
 
     // Puntuaciones
     Route::get('/scores', [ScoreController::class, 'index'])->name('scores.view');
-    Route::get('/scores/filter', [ScoreController::class, 'filter'])->name('scores.filter');
 
     // Logros
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.view');

@@ -154,6 +154,5 @@ class AuthTest extends TestCase
         $run = Run::factory()->create(['words_correct' => ['BARCO'], 'score' => 10]);
 
         $this->actingAs($run->user)->get(route('scores.view'))->assertOk()->assertDontSee($run->user->email);
-        $this->actingAs($run->user)->getJson(route('scores.filter'))->assertOk()->assertDontSee($run->user->email);
     }
 }

@@ -69,11 +69,7 @@
                         <div class="flex flex-wrap gap-9">
                             @foreach ($achievements as $achievement)
                                 <figure class="flex items-center gap-4">
-                                    <span aria-hidden="true" class="flex size-24 shrink-0 items-center justify-center rounded-full border-[5px] border-ink bg-mustard shadow-hard-sm {{ $loop->odd ? '-rotate-8' : 'rotate-6' }}">
-                                        <span class="flex size-[74px] items-center justify-center rounded-full border-[3px] border-dashed border-ink">
-                                            <svg viewBox="0 0 24 24" class="size-9" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg>
-                                        </span>
-                                    </span>
+                                    <x-sticker :tilt="$loop->odd ? -8 : 6" />
                                     <figcaption class="flex flex-col gap-0.5">
                                         <strong class="font-display text-xl font-normal">{{ $achievement->name }}</strong>
                                         <span class="text-xl">{{ $achievement->description }}</span>

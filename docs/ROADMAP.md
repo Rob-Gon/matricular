@@ -91,9 +91,10 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 - [x] Desktop (≥1280 px): the car drives on a road in perspective (`x-road-scene`: sky, low sun, hills, road to the horizon) and the word form is a card standing on the road; smaller screens keep the flat road band (owner's choice from the canvas test)
 
 ### PR 4 · `feat/legacy-removal`
-- [ ] Menu, scores and achievements pages on the new layout (fixes the continuously animated menu buttons that Playwright cannot click)
-- [ ] Remove Bootstrap, jQuery, Font Awesome, Sass, SweetAlert2, axios, `master-layout` and the legacy JS
-- [ ] Accessibility pass over the whole game: keyboard play, focus, reduced motion
+- [x] Menu (personal best, two mode cards), scores and achievements pages on the new layout (fixes the continuously animated menu buttons that Playwright cannot click)
+- [x] Rankings filtered with a plain GET form (mode, letters, order, duration); invalid query values are ignored. The AJAX `scores.filter` endpoint is gone; recent runs link to their trip receipt
+- [x] Removed Bootstrap, jQuery, Font Awesome, Sass, SweetAlert2, axios, `master-layout` and the legacy JS; Vite builds only `app.css` and `site.js`
+- [x] Accessibility pass: current page marked with `aria-current` in the nav, no horizontal scroll at 390 px on any page (a screen-reader-only label inside a scrolling table escaped its box), keyboard play and reduced motion already covered by PR 3
 
 ### PR 5 · `feat/sound`
 - [ ] Sound player with Howler.js: background music and effects (correct, wrong, new plate, achievement), mute and volume persisted in `localStorage`, starts only after a user gesture (browser autoplay rules). Tracks chosen later, with licenses credited on `/creditos`
