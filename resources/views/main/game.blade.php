@@ -8,9 +8,9 @@
 @section('content')
 <div class="game-container">
 
-    @if($mode === 'Contrareloj' && isset($countdown_time))
+    @if($countdownTotal)
         <div class="game-countdown">
-            <h1>Tiempo restante: <span id="countdown-timer">{{ $countdown_time }}</span></h1>
+            <h1>Tiempo restante: <span id="countdown-timer">{{ $countdownRemaining }}</span></h1>
             <div class="countdown-progress">
                 <div class="progress-bar">
                     <div class="progress-fill" id="countdown-progress"></div>
@@ -30,25 +30,23 @@
         <div class="screw screw-bl"></div>
         <div class="screw screw-br"></div>
         <div class="plate-content">
-            <span class="letter">{{ $char1 }}</span>
-            <span class="letter">{{ $char2 }}</span>
-            <span class="letter">{{ $char3 }}</span>
+            @foreach($run->plateLetters() as $letter)
+                <span class="letter">{{ $letter }}</span>
+            @endforeach
         </div>
         <div class="plate-line bottom"></div>
     </div>
 
     <div class="input-container">
-        <form id="game-form" class="word-form gap-2">
+        <form id="game-form" class="word-form gap-2"
+              data-check-word-url="{{ route('game.check-word', $run) }}"
+              data-change-plate-url="{{ route('game.change-plate', $run) }}"
+              data-end-url="{{ route('game.end', $run) }}">
             @csrf
-            <input type="hidden" name="run_id" id="run_id" value="{{ $run->id }}">
-            <input type="hidden" name="char1" id="char1" value="{{ $char1 }}">
-            <input type="hidden" name="char2" id="char2" value="{{ $char2 }}">
-            <input type="hidden" name="char3" id="char3" value="{{ $char3 }}">
-            @if($mode === 'Contrareloj' && isset($countdown_time))
-                <input type="hidden" name="countdown_time" id="countdown_time" value="{{ $countdown_time }}">
-                <input type="hidden" name="mode" id="mode" value="Contrareloj">
-            @else
-                <input type="hidden" name="mode" id="mode" value="Infinito">
+            <input type="hidden" name="mode" id="mode" value="{{ $mode }}">
+            @if($countdownTotal)
+                <input type="hidden" id="countdown_total" value="{{ $countdownTotal }}">
+                <input type="hidden" id="countdown_remaining" value="{{ $countdownRemaining }}">
             @endif
 
             <div class="form-group">
@@ -59,7 +57,7 @@
                         placeholder="Escribe una palabra..." 
                         autocomplete="off"
                         minlength="3"
-                        maxlength="255" 
+                        maxlength="50" 
                         required>
             </div>
             <button type="submit" class="btn btn-primary submit-word" id="btn-submit-word">Enviar</button>
@@ -106,8 +104,14 @@
         </div>
         <div class="modal-body">
             <p>Puedes elegir entre volver a jugar o volver al menú</p>
-            <button id="play-again-btn" class="btn btn-primary m-2">Volver a jugar</button>
-            <button id="go-menu-btn" class="btn btn-secondary m-2">Volver al menú</button>
+            <form method="POST" action="{{ route('game.start') }}" class="d-inline">
+                @csrf
+                <input type="hidden" name="mode" value="{{ $run->mode }}">
+                <input type="hidden" name="difficulty" value="{{ $run->difficulty }}">
+                <input type="hidden" name="countdown_time" value="{{ $run->countdown_time }}">
+                <button type="submit" class="btn btn-primary m-2">Volver a jugar</button>
+            </form>
+            <a href="{{ route('menu.view') }}" class="btn btn-secondary m-2">Volver al menú</a>
         </div>
         </div>
     </div>

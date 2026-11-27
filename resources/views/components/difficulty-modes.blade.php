@@ -6,7 +6,7 @@
 
 <div class="difficulty-modes">
     <h1>Selecciona la dificultad</h1>
-    <form action="{{ route('game.view') }}" method="POST" id="difficulty-form">
+    <form action="{{ route('game.start') }}" method="POST" id="difficulty-form">
         @csrf
         <input type="hidden" name="mode" id="selected-mode" value="">
         <input type="hidden" name="countdown_time" id="selected-countdown-time" value="">

@@ -52,14 +52,17 @@ Route::middleware('auth')->group(function () {
     })->name('menu.view');
 
     // Juego
-    Route::prefix('game')->group(function () {
-        Route::post('/', [GameController::class, 'gameView'])->name('game.view');
-        Route::get('/countdown/modes', [GameController::class, 'countdownModesView'])->name('game.countdown-modes');
-        Route::get('/difficulty/modes', [GameController::class, 'difficultyModesView'])->name('game.difficulty-modes');
-        Route::post('/infinite', [GameController::class, 'infiniteView'])->name('game.infinite');
-        Route::post('/check-word', [GameController::class, 'checkWord'])->name('game.check-word');
-        Route::post('/change-plate', [GameController::class, 'changePlate'])->name('game.change-plate');
-        Route::post('/reset-run', [GameController::class, 'resetRun'])->name('game.reset-run');
+    Route::prefix('game')->name('game.')->controller(GameController::class)->group(function () {
+        Route::post('/', 'start')->name('start');
+        Route::get('/countdown/modes', 'countdownModesView')->name('countdown-modes');
+        Route::get('/difficulty/modes', 'difficultyModesView')->name('difficulty-modes');
+        Route::get('/{run}', 'show')->whereNumber('run')->name('show');
+
+        Route::middleware('throttle:game')->whereNumber('run')->group(function () {
+            Route::post('/{run}/words', 'checkWord')->name('check-word');
+            Route::post('/{run}/plate', 'changePlate')->name('change-plate');
+            Route::post('/{run}/end', 'end')->name('end');
+        });
     });
 
     // Puntuaciones

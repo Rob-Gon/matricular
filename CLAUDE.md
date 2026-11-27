@@ -52,7 +52,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - GitHub: https://github.com/Rob-Gon/matricular (public). Never commit secrets or real user data.
 
 ## Recommended Claude Code plugins
-From `claude-plugins-official`: laravel-boost, frontend-design, security-guidance, playwright, context7, feature-dev, code-review, pr-review-toolkit, github, claude-md-management. Optional (need npm global installs): php-lsp, typescript-lsp.
+From `claude-plugins-official`: laravel-boost, frontend-design, security-guidance, playwright, context7, feature-dev, code-review, pr-review-toolkit, claude-md-management. Optional (need npm global installs): php-lsp, typescript-lsp.
 
 ## Do not touch
 - `.env` (ask first).

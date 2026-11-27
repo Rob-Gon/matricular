@@ -2,349 +2,131 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SubmitWord;
 use App\Enums\CountdownModes;
 use App\Enums\GameDifficulties;
-use App\Enums\GameModes;
+use App\Http\Requests\StartGameRequest;
+use App\Http\Requests\SubmitWordRequest;
 use App\Models\Run;
+use App\Services\PlateGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 
 class GameController extends Controller
 {
     /**
-     * Muestra la vista del juego modo contrarreloj
-     *
-     * @return View
+     * Crea la run y redirige a su página, para que recargar no reenvíe el formulario.
      */
-    public function gameView(Request $request)
+    public function start(StartGameRequest $request, PlateGenerator $plates): RedirectResponse
     {
-        // Validar que los campos requeridos estén presentes
-        if (! $request->mode || ! $request->difficulty || ($request->mode === GameModes::CONTRARELOJ->value() && ! $request->countdown_time)) {
-            return redirect()->route('menu.view')->with('error', 'Error: Datos de la run incompletos');
+        $countdown = $request->countdown();
+
+        $run = Run::create([
+            'user_id' => $request->user()->id,
+            'score' => 0,
+            'mode' => $request->mode()->value,
+            'difficulty' => $request->difficulty()->value,
+            'countdown_time' => $countdown?->value,
+            'plate' => $plates->generate($request->difficulty()),
+            'ends_at' => $countdown ? now()->addSeconds($countdown->seconds()) : null,
+            'words_correct' => [],
+            'words_error' => [],
+        ]);
+
+        return redirect()->route('game.show', $run);
+    }
+
+    /**
+     * Muestra la partida en curso
+     */
+    public function show(Run $run): View|RedirectResponse
+    {
+        Gate::authorize('play', $run);
+
+        if ($run->isOver()) {
+            return redirect()->route('menu.view')->with('error', 'La partida ha terminado.');
         }
 
-        // Crear la run actual
-        $run = $this->createCurrentRun($request->mode, $request->difficulty, $request->countdown_time);
-
-        // Si el modo es contrarreloj, obtener los segundos del enum
-        if ($request->mode === GameModes::CONTRARELOJ->value() && $request->countdown_time) {
-            $countdownSeconds = CountdownModes::from($request->countdown_time)->seconds();
-        }
-
-        // Crear las letras para la matrícula
-        $chars = $this->createChars($request->difficulty);
-
-        // Devolver la vista con los datos necesarios
         return view('main.game', [
-            'char1' => $chars[0],
-            'char2' => $chars[1],
-            'char3' => $chars[2],
             'run' => $run,
-            'mode' => $request->mode,
-            'difficulty' => $request->difficulty,
-            'countdown_time' => $countdownSeconds ?? null,
+            'mode' => $run->mode,
+            'countdownTotal' => $run->countdown_time ? CountdownModes::from($run->countdown_time)->seconds() : null,
+            'countdownRemaining' => $run->remainingSeconds(),
         ]);
     }
 
     /**
      * Devuelve la vista de modos de cuenta atrás para AJAX
-     *
-     * @return View
      */
-    public function countdownModesView()
+    public function countdownModesView(): View
     {
         return view('components.countdown-modes');
     }
 
     /**
      * Devuelve la vista de dificultades para AJAX
-     *
-     * @return View
      */
-    public function difficultyModesView()
+    public function difficultyModesView(): View
     {
         return view('components.difficulty-modes');
     }
 
     /**
-     * Crea la run actual para el usuario
-     *
-     * @param  string  $mode  GameModes
-     * @param  string  $difficulty  GameDifficulties
-     * @param  string  $countdown_time  CountdownModes|null
-     * @return Run
-     */
-    private function createCurrentRun($mode, $difficulty, $countdown_time = null)
-    {
-        try {
-            // Crear la run
-            $run = Run::create([
-                'user_id' => auth()->id(),
-                'score' => 0,
-                'mode' => $mode,
-                'difficulty' => $difficulty,
-                'countdown_time' => $countdown_time ?? null,
-                'words_tried' => [],
-                'words_error' => [],
-                'words_correct' => [],
-            ]);
-
-            // Devolver la run
-            Log::info('Run creada correctamente');
-
-            return $run;
-        } catch (\Exception $e) {
-            // Manejo del error
-            Log::error('Error creando la run actual: '.$e->getMessage());
-            throw new \Exception('Error creando la run actual: '.$e->getMessage());
-        }
-    }
-
-    /**
-     * Obtiene la run actual para el usuario
-     *
-     * @return Run
-     */
-    private function getCurrentRun($run_id)
-    {
-        try {
-            // Obtener la run actual
-            $run = Run::find($run_id);
-
-            // Si la run no existe, se lanza un error
-            if (! $run) {
-                Log::error('Run no encontrada');
-                throw new \Exception('Run no encontrada');
-            }
-
-            // Devolver la run
-            Log::info('Run obtenida correctamente');
-
-            return $run;
-        } catch (\Exception $e) {
-            // Manejo del error
-            Log::error('Error obteniendo la run actual: '.$e->getMessage());
-            throw new \Exception('Error obteniendo la run actual: '.$e->getMessage());
-        }
-    }
-
-    /**
-     * Crea las letras para la matrícula
-     *
-     * @param  string  $difficulty  GameDifficulties
-     * @return array
-     */
-    private function createChars($difficulty)
-    {
-        if ($difficulty == GameDifficulties::FACIL->value()) {
-            // Se excluyen las letras Q, W, Y, K, Ñ, Z, X, V
-            $chars = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'L', 'M', 'N', 'P', 'R', 'S', 'T'];
-            $char1 = $chars[array_rand($chars)];
-            $char2 = $chars[array_rand($chars)];
-            $char3 = $chars[array_rand($chars)];
-        } else {
-            $chars = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
-            $char1 = $chars[array_rand($chars)];
-            $char2 = $chars[array_rand($chars)];
-            $char3 = $chars[array_rand($chars)];
-        }
-
-        // Devolver las letras en mayúsculas
-        return [strtoupper($char1), strtoupper($char2), strtoupper($char3)];
-    }
-
-    /**
      * Comprueba la palabra y actualiza la puntuación
-     *
-     * @return JsonResponse
      */
-    public function checkWord(Request $request)
+    public function checkWord(SubmitWordRequest $request, Run $run, SubmitWord $submitWord): JsonResponse
     {
-        // Obtener la run actual
-        $run = $this->getCurrentRun($request->run_id);
+        Gate::authorize('play', $run);
 
-        // Validar la palabra
-        $rules = [
-            'word' => 'required|string|min:3|max:255',
-        ];
+        $result = $submitWord->handle($run, $request->validated('word'));
 
-        $messages = [
-            'word.required' => 'La palabra es requerida',
-            'word.string' => 'La palabra debe ser una cadena de texto',
-            'word.min' => 'La palabra debe tener al menos 3 caracteres',
-            'word.max' => 'La palabra no debe exceder los 255 caracteres',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'chars' => [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)],
-                'score' => $run->score,
-            ]);
-        }
-
-        // Convertir la palabra a mayúsculas y obtener las letras de la matrícula
-        $word = strtoupper($request->word);
-        $chars = [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)];
-
-        // Si la dificultad es difícil, verificar que las letras aparecen en el mismo orden secuencial
-        if ($run->difficulty === GameDifficulties::DIFICIL->value()) {
-            $plateIndex = 0;
-            $lettersInOrder = false;
-
-            for ($i = 0; $i < strlen($word); $i++) {
-                if ($plateIndex < count($chars) && $word[$i] === $chars[$plateIndex]) {
-                    $plateIndex++;
-                    if ($plateIndex === count($chars)) {
-                        $lettersInOrder = true;
-                        break;
-                    }
-                }
-            }
-
-            if (! $lettersInOrder) {
-                // Añadir la palabra incorrecta a la run y restar puntos
-                $run->addErrorWord($word);
-                $run->removePoints(5);
-
-                // Si la palabra no contiene todas las letras de la matrícula, se devuelve un mensaje de error
-                return response()->json([
-                    'success' => false,
-                    'message' => '¡Fallo! En modo difícil, las letras deben aparecer en el mismo orden. Has perdido 5 puntos.',
-                    'chars' => $chars,
-                    'score' => $run->score,
-                ]);
-            }
-        }
-
-        // Verificar que la palabra contiene todas las letras de la matrícula
-        $requiredCounts = array_count_values($chars);
-        $wordCounts = count_chars($word, 1);
-
-        foreach ($requiredCounts as $char => $count) {
-            $ascii = ord($char);
-            $inWord = isset($wordCounts[$ascii]) ? $wordCounts[$ascii] : 0;
-            if ($inWord < $count) {
-                $run->addErrorWord($word);
-                $run->removePoints(5);
-
-                // Si la palabra no contiene todas las letras de la matrícula, se devuelve un mensaje de error
-                return response()->json([
-                    'success' => false,
-                    'message' => '¡Fallo! La palabra no contiene todas las letras de la matrícula. Has perdido 5 puntos.',
-                    'chars' => $chars,
-                    'score' => $run->score,
-                ]);
-            }
-        }
-
-        try {
-            // Verificar si la palabra existe en el diccionario de la API de la RAE
-            $response = Http::withOptions([
-                'verify' => false, // Desactivar la verificación del certificado SSL
-            ])->get("https://rae-api.com/api/words/{$word}");
-
-            // Obtener los datos de la respuesta
-            $data = $response->json();
-
-            // Si la palabra existe en el diccionario de la API de la RAE
-            if ($data['ok'] === true) {
-                // Añadir la palabra correcta a la run y sumar puntos
-                $run->addCorrectWord($word);
-                $run->addPoints(10);
-
-                // Crear nuevas letras para la matrícula
-                $newChars = $this->createChars($run->difficulty);
-
-                // Devolver la respuesta con las nuevas letras y la puntuación actualizada
-                return response()->json([
-                    'success' => true,
-                    'message' => '¡Palabra válida! Has ganado 10 puntos.',
-                    'chars' => $newChars,
-                    'score' => $run->score,
-                ]);
-            } else {
-                // Añadir la palabra incorrecta a la run y restar puntos
-                $run->addErrorWord($word);
-                $run->removePoints(5);
-
-                // Devolver la respuesta con las letras actuales y la puntuación actualizada
-                return response()->json([
-                    'success' => false,
-                    'message' => '¡Fallo! La palabra no existe en el diccionario de la RAE. Has perdido 5 puntos.',
-                    'chars' => $chars,
-                    'score' => $run->score,
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Si hay un error al verificar la palabra, se devuelve un mensaje de error
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al verificar la palabra. Por favor, inténtalo de nuevo.',
-                'chars' => $chars,
-                'score' => $run->score,
-            ]);
-        }
+        return $this->gameResponse($run, $result, isset($result['game_over']) ? 409 : 200);
     }
 
     /**
-     * Cambia la matrícula
-     *
-     * @return JsonResponse
+     * Cambia la matrícula con penalización
      */
-    public function changePlate(Request $request)
+    public function changePlate(Run $run, PlateGenerator $plates): JsonResponse
     {
-        // Obtener la run actual
-        $run = $this->getCurrentRun($request->run_id);
+        Gate::authorize('play', $run);
 
-        // Obtener las letras actuales de la matrícula
-        $chars = [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)];
+        if ($run->isOver()) {
+            return $this->gameResponse($run, ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true], 409);
+        }
 
-        // Añadir las letras a la run y restar puntos
-        $run->addCharsSkipped($chars);
-        $run->removePoints(5);
+        $run->skipPlate($plates->generate(GameDifficulties::from($run->difficulty)));
+        $run->save();
 
-        $newChars = $this->createChars($run->difficulty);
-
-        return response()->json([
+        return $this->gameResponse($run, [
             'success' => false,
-            'message' => '¡Imposible! La matrícula ha cambiado. Has perdido 5 puntos.',
-            'chars' => $newChars,
-            'score' => $run->score,
+            'message' => '¡Imposible! La matrícula ha cambiado. Has perdido '.Run::POINTS_PENALTY.' puntos.',
         ]);
     }
 
     /**
-     * Reinicia la run
-     *
-     * @return JsonResponse
+     * Termina la partida (botón "Terminar partida" o fin de la cuenta atrás)
      */
-    public function resetRun(Request $request)
+    public function end(Run $run): JsonResponse
     {
-        // Obtener la run actual
-        $run = $this->getCurrentRun($request->run_id);
+        Gate::authorize('play', $run);
 
-        // Si la run está vacía, se elimina de forma permanente
-        if (empty($run->words_correct) && empty($run->words_error)) {
-            $run->forceDelete();
-        } else {
-            $run->delete();
-        }
+        $run->ended_at ??= now();
+        $run->save();
 
-        // Crear una nueva run
-        $run = $this->createCurrentRun($request->mode, $request->difficulty, $request->countdown_time);
+        return $this->gameResponse($run, ['success' => true, 'message' => 'Partida terminada.', 'game_over' => true]);
+    }
 
-        // Devolver la respuesta con el mensaje de éxito
+    /**
+     * @param  array{success: bool, message: string, game_over?: bool}  $result
+     */
+    private function gameResponse(Run $run, array $result, int $status = 200): JsonResponse
+    {
         return response()->json([
-            'success' => true,
-            'message' => 'Run reiniciada correctamente',
-        ]);
+            ...$result,
+            'chars' => $run->plateLetters(),
+            'score' => $run->score,
+        ], $status);
     }
 }

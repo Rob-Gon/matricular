@@ -3,13 +3,6 @@
      * Este archivo contiene todas las funciones JavaScript utilizadas en los modos de juego
  */
 
-// Rutas de las peticiones AJAX
-window.gameRoutes = window.gameRoutes || {
-    checkWord: '/game/check-word',
-    changePlate: '/game/change-plate',
-    resetRun: '/game/reset-run'
-};
-
 /**
  * Clase que gestiona toda la lógica del juego
  */
@@ -83,11 +76,6 @@ class GameManager {
             $('#endGameModal').modal('hide');
             GameManager.endRun();
         });
-
-        // Función para reiniciar la run en caso de que se cierre la pestaña
-        window.addEventListener('beforeunload', function() {
-            GameManager.resetRun();
-        });
     }
 
     /**
@@ -95,19 +83,21 @@ class GameManager {
      */
     initializeCountdown() {
         if (this.gameMode === 'Contrareloj') {
-            const countdownTime = parseInt($('#countdown_time').val());
-            this.startCountdown(countdownTime);
+            const total = parseInt($('#countdown_total').val());
+            const remaining = parseInt($('#countdown_remaining').val());
+            this.startCountdown(total, remaining);
         }
     }
 
     /**
      * Iniciar la cuenta atrás
-     * @param {number} countdownTime - Tiempo en segundos
+     * @param {number} total - Duración total en segundos
+     * @param {number} remaining - Segundos restantes según el servidor
      */
-    startCountdown(countdownTime) {
+    startCountdown(total, remaining) {
         // Inicializa el tiempo inicial y el tiempo actual
-        this.initialTime = countdownTime;
-        this.countdownTime = this.initialTime;
+        this.initialTime = total;
+        this.countdownTime = remaining;
 
         // Actualiza el display de la cuenta atrás
         this.updateCountdownDisplay();
@@ -157,85 +147,47 @@ class GameManager {
      * Comprobar la palabra enviada por el usuario
      */
     static checkWord() {
-        $.ajax({
-            url: window.gameRoutes.checkWord,
-            method: 'POST',
-            data: {
-                // Datos del formulario a enviar
-                word: $('#word').val(),
-                char1: $('#char1').val(),
-                char2: $('#char2').val(),
-                char3: $('#char3').val(),
-                run_id: $('#run_id').val(),
-                // Token de seguridad
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            // Maneja la respuesta del servidor
-            success: function(response) {
-                GameManager.handleCheckWordResponse(response);
-            },
-            // Maneja el error
-            error: function(error) {
-                console.error('Error al comprobar palabra:', error);
-                $('#message').stop().show();
-                $('#message').html('<div class="alert alert-danger">Error al procesar la palabra</div>');
-            }
-        });
+        GameManager.post('checkWordUrl', { word: $('#word').val() }, 'Error al procesar la palabra');
     }
 
     /**
      * Cambiar la matrícula actual
      */
     static changePlate() {
+        GameManager.post('changePlateUrl', {}, 'Error al cambiar la matrícula');
+    }
+
+    /**
+     * Envía una acción de la partida al servidor, que es quien decide matrícula, tiempo y puntos
+     * @param {string} urlKey - Clave jQuery.data() del formulario con la URL (data-check-word-url → checkWordUrl)
+     * @param {object} data - Datos a enviar
+     * @param {string} fallbackMessage - Mensaje si el servidor no devuelve uno
+     */
+    static post(urlKey, data, fallbackMessage) {
         $.ajax({
-            url: window.gameRoutes.changePlate,
+            url: $('#game-form').data(urlKey),
             method: 'POST',
-            data: {
-                // Datos del formulario a enviar
-                char1: $('#char1').val(),
-                char2: $('#char2').val(),
-                char3: $('#char3').val(),
-                run_id: $('#run_id').val(),
-                // Token de seguridad
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            // Maneja la respuesta del servidor
+            data: { ...data, _token: $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
-                GameManager.handleChangePlateResponse(response);
+                GameManager.handleResponse(response);
             },
-            // Maneja el error
-            error: function(error) {
-                console.error('Error al cambiar matrícula:', error);
-                $('#message').stop().show();
-                $('#message').html('<div class="alert alert-danger">Error al cambiar la matrícula</div>');
+            error: function(xhr) {
+                const response = xhr.responseJSON || {};
+
+                // 409: la partida ya ha terminado en el servidor
+                if (xhr.status === 409) {
+                    GameManager.handleResponse(response);
+                    GameManager.endRun();
+                    return;
+                }
+
+                GameManager.showMessage(response.message || fallbackMessage, false);
             }
         });
     }
 
     /**
-     * Reiniciar la run cuando se cierra la pestaña
-     */
-    static resetRun() {
-        // Envía una petición POST a la ruta de reinicio de la run
-        fetch(window.gameRoutes.resetRun, {
-            method: 'POST',
-            // Cabeceras de la petición
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            // Datos del formulario a enviar
-            body: JSON.stringify({
-                run_id: $('#run_id').val()
-            })
-        // Maneja el error de la petición
-        }).catch(error => {
-            console.error('Error al reiniciar run:', error);
-        });
-    }
-
-    /**
-     * Terminar la run cuando se acaba el tiempo
+     * Terminar la run cuando se acaba el tiempo o el jugador la termina
      * @param {number} countdownInterval - Intervalo de la cuenta atrás
      */
     static endRun(countdownInterval = null) {
@@ -244,79 +196,48 @@ class GameManager {
             clearInterval(countdownInterval);
         }
 
+        // Registra el fin en el servidor; si falla, el servidor la da por terminada igualmente al pasar ends_at
+        $.post($('#game-form').data('endUrl'), { _token: $('meta[name="csrf-token"]').attr('content') });
+
         // Mostrar el modal de fin de juego
-        $('#gameOverModal').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
-        
         $('#gameOverModal').modal('show');
 
         // Deshabilitar el formulario
         $('#game-form').find('input, button').prop('disabled', true);
-
-        // Botón volver a jugar
-        $('#play-again-btn').off('click').on('click', function() {
-            location.reload();
-        });
-
-        // Botón volver al menú
-        $('#go-menu-btn').off('click').on('click', function() {
-            window.location.href = '/menu';
-        });
     }
 
     /**
-     * Manejo de la respuesta del servidor al comprobar una palabra
+     * Manejo de la respuesta del servidor
      */
-    static handleCheckWordResponse(response) {
-        // Muestra el mensaje de éxito o error
-        $('#message').stop().show();
-        
-        // Muestra el mensaje de éxito o error
-        if (response.success) {
-            $('#message').html('<div class="alert alert-success">' + response.message + '</div>');
-        } else {
-            $('#message').html('<div class="alert alert-danger">' + response.message + '</div>');
+    static handleResponse(response) {
+        if (response.message) {
+            GameManager.showMessage(response.message, response.success);
         }
-        
-        // Actualiza la puntuación
-        $('#score').text(response.score);
-        
-        // Actualiza la matrícula
-        GameManager.updatePlate(response.chars);
-        
+
+        if (response.score !== undefined) {
+            $('#score').text(response.score);
+        }
+
+        if (response.chars) {
+            GameManager.updatePlate(response.chars);
+        }
+
         // Limpia el input de la palabra
         $('#word').val('');
     }
 
     /**
-     * Manejo de la respuesta del servidor al cambiar la matrícula
+     * Muestra un mensaje como texto, nunca como HTML
      */
-    static handleChangePlateResponse(response) {
-        // Muestra el mensaje de éxito o error
-        $('#message').stop().show();
-        $('#message').html('<div class="alert alert-danger">' + response.message + '</div>');
-
-        // Actualiza la puntuación
-        $('#score').text(response.score);
-
-        // Actualiza la matrícula
-        GameManager.updatePlate(response.chars);
-
-        // Limpia el input de la palabra
-        $('#word').val('');
+    static showMessage(message, success) {
+        const alert = $('<div>').addClass('alert ' + (success ? 'alert-success' : 'alert-danger')).text(message);
+        $('#message').stop().show().empty().append(alert);
     }
 
     /**
      * Actualiza la matrícula en la interfaz
      */
     static updatePlate(chars) {
-        // Actualiza los inputs de la matrícula
-        $('#char1').val(chars[0]);
-        $('#char2').val(chars[1]);
-        $('#char3').val(chars[2]);
-
         // Actualiza los spans de la matrícula
         $('.letter').eq(0).text(chars[0]);
         $('.letter').eq(1).text(chars[1]);
