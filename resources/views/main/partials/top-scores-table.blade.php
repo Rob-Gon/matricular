@@ -13,7 +13,6 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Usuario</th>
-                            <th scope="col">Email</th>
                             <th scope="col">Mayor Puntuación</th>
                             <th scope="col">Total de Partidas</th>
                         </tr>
@@ -30,7 +29,6 @@
                                 <td>
                                     <strong>{{ $score->name }}</strong>
                                 </td>
-                                <td>{{ $score->email }}</td>
                                 <td>
                                     <span class="badge bg-success fs-6">
                                         {{ number_format($score->highest_score ?? 0) }}

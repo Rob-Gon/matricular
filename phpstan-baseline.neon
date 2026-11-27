@@ -1,42 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Class App\\Http\\Middleware\\EncryptCookies not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Kernel.php
-
-		-
-			message: '#^Class App\\Http\\Middleware\\PreventRequestsDuringMaintenance not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Kernel.php
-
-		-
-			message: '#^Class App\\Http\\Middleware\\TrimStrings not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Kernel.php
-
-		-
-			message: '#^Class App\\Http\\Middleware\\TrustProxies not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Kernel.php
-
-		-
-			message: '#^Class App\\Http\\Middleware\\VerifyCsrfToken not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Kernel.php
-
-		-
-			message: '#^Parameter \#3 \$guards \(array\<string\>\) of method App\\Http\\Middleware\\Authenticate\:\:handle\(\) should be compatible with parameter \$guards \(string\) of method Illuminate\\Auth\\Middleware\\Authenticate\:\:handle\(\)$#'
-			identifier: method.childParameterType
-			count: 1
-			path: app/Http/Middleware/Authenticate.php
-
-		-
 			message: '#^Call to an undefined method App\\Models\\User\:\:userAchievements\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -47,9 +11,3 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: database/seeders/AchievementsSeeder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$remember_token\.$#'
-			identifier: property.notFound
-			count: 1
-			path: routes/web.php
