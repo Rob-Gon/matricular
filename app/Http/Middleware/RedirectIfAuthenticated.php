@@ -12,7 +12,7 @@ class RedirectIfAuthenticated
     /**
      * Redirige al usuario a la página de inicio si ya ha iniciado sesión
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {

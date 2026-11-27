@@ -12,7 +12,7 @@ class Authenticate extends Middleware
     /**
      * Redirige al usuario a la página de inicio si no ha iniciado sesión
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  string[]  ...$guards
      * @return mixed
      */

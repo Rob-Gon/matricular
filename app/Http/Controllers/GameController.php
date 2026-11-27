@@ -6,6 +6,8 @@ use App\Enums\CountdownModes;
 use App\Enums\GameDifficulties;
 use App\Enums\GameModes;
 use App\Models\Run;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +18,7 @@ class GameController extends Controller
     /**
      * Muestra la vista del juego modo contrarreloj
      *
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function gameView(Request $request)
     {
@@ -51,7 +53,7 @@ class GameController extends Controller
     /**
      * Devuelve la vista de modos de cuenta atrás para AJAX
      *
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function countdownModesView()
     {
@@ -61,7 +63,7 @@ class GameController extends Controller
     /**
      * Devuelve la vista de dificultades para AJAX
      *
-     * @return \Illuminate\Contracts\View\View
+     * @return View
      */
     public function difficultyModesView()
     {
@@ -158,7 +160,7 @@ class GameController extends Controller
     /**
      * Comprueba la palabra y actualiza la puntuación
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function checkWord(Request $request)
     {
@@ -295,7 +297,7 @@ class GameController extends Controller
     /**
      * Cambia la matrícula
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function changePlate(Request $request)
     {
@@ -322,7 +324,7 @@ class GameController extends Controller
     /**
      * Reinicia la run
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function resetRun(Request $request)
     {
