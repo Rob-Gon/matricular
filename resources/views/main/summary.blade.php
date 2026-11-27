@@ -38,6 +38,14 @@
                     <dt>Fallos</dt><dd class="font-black">{{ count($rejected) }}</dd>
                     <dt>Pasamatrículas</dt><dd class="font-black">{{ $skips }}</dd>
                     <dt>La más larga</dt><dd class="font-black break-all">{{ $longest ?? '—' }}</dd>
+                    <dt>La más rápida</dt>
+                    <dd class="font-black">
+                        @if ($fastest)
+                            {{ $fastest->display() }}, {{ number_format($fastest->elapsed_ms / 1000, 1, ',', '.') }} s
+                        @else
+                            —
+                        @endif
+                    </dd>
                 </dl>
             </div>
 

@@ -8,6 +8,7 @@ use App\Enums\GameModes;
 use App\Http\Requests\StartGameRequest;
 use App\Http\Requests\SubmitWordRequest;
 use App\Models\Run;
+use App\Models\RunWord;
 use App\Services\AchievementUnlocker;
 use App\Services\PlateGenerator;
 use Illuminate\Contracts\View\View;
@@ -33,6 +34,7 @@ class GameController extends Controller
             'ordered' => $request->ordered(),
             'countdown_time' => $countdown?->value,
             'plate' => $plates->generate($request->letterSet(), $request->ordered()),
+            'plate_dealt_at' => now(),
             'ends_at' => $countdown ? now()->addSeconds($countdown->seconds()) : null,
             'words_correct' => [],
             'words_error' => [],
@@ -138,14 +140,18 @@ class GameController extends Controller
         // A countdown that ran out with the tab closed never called end(); close it now.
         $this->finish($run, $achievements);
 
-        $words = array_map(mb_strtolower(...), $run->words_correct ?? []);
+        $attempts = $run->runWords()->orderBy('id')->get();
+        $valid = $attempts->where('valid', true);
+        $fastest = $valid->whereNotNull('elapsed_ms')->sortBy('elapsed_ms')->first();
 
         return view('main.summary', [
             'run' => $run,
-            'words' => $words,
-            'rejected' => array_map(mb_strtolower(...), $run->words_error ?? []),
-            'skips' => count($run->chars_skipped ?? []),
-            'longest' => collect($words)->sortByDesc(fn (string $word) => mb_strlen($word))->first(),
+            'words' => $valid->map->display()->values()->all(),
+            'rejected' => $attempts->where('kind', RunWord::KIND_WORD)->where('valid', false)
+                ->where('reason', '!=', RunWord::REASON_REPEATED)->map->display()->values()->all(),
+            'skips' => $attempts->where('kind', RunWord::KIND_SKIP)->count(),
+            'longest' => $valid->map->display()->sortByDesc(fn (string $word) => mb_strlen($word))->first(),
+            'fastest' => $fastest,
             'best' => (int) $run->user->runs()->max('score'),
             'achievements' => $run->user->achievements()->wherePivot('run_id', $run->id)->orderBy('sort')->get(),
         ]);

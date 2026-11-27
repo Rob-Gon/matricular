@@ -9,6 +9,6 @@ class FirstGame implements RunAchievement
 {
     public function isUnlockedByRun(Run $run): bool
     {
-        return $run->words_correct !== [] || $run->words_error !== [];
+        return $run->runWords()->words()->exists();
     }
 }

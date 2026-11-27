@@ -68,7 +68,7 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 
 ## F3 – Frontend rebuild
 - [x] Visual direction approved by the owner: 1930s rubber-hose cartoon (original art), palette Ink #000000 · Celluloid #E7D7B0 · Enamel #FBF8EF · Stage green #265E57 · Mustard #E9A92B · Signal red #C8361F · Plate blue #1F3A97, fonts Chango + Big Shoulders (design canvas kept in the owner's Obsidian)
-Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layouts/master-layout` until every page is migrated.
+Done 2026-11-27 in five PRs plus follow-ups (skip key, desktop road in perspective, time zones). Every page uses `components/layouts/app`.
 
 ### PR 1 · `feat/frontend-foundation`
 - [x] Tailwind 4 theme (palette, Chango + Big Shoulders self-hosted latin woff2, preloaded), Alpine (`resources/js/site.js`)
@@ -101,8 +101,17 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 - [x] Effects: Kenney "Interface Sounds" (CC0). Music: Tom Feldmann's "Old Cartoon Music Pack Lite" (CC BY 4.0, 6 tracks converted to 112 kbps MP3 with normalized loudness), shuffled as a playlist; both credited on `/creditos`. Any file dropped in `resources/sounds/music` joins the playlist
 
 ## F4 – Game data & stats
-- [ ] `run_words` table (word, plate, valid, reason, points, elapsed_ms) replacing JSON arrays
-- [ ] End-of-game stats screen
+### PR 1 · `feat/run-words`
+- [x] `run_words`: one row per attempt (word or skip) with plate, input as typed, normalized key, dictionary spelling (`form`, not a foreign key because `dictionary:import` rebuilds `words`), valid, reason (`missing_letters`, `wrong_order`, `not_in_dictionary`, `repeated`), points and `elapsed_ms` since the plate was dealt (`runs.plate_dealt_at`, milliseconds)
+- [x] Backfill from the JSON arrays (old runs have no plates, times or reasons; accents recovered from `words`)
+- [x] Readers moved to `run_words`: repeated-word check, `attempted` scope, rankings, first-game achievement, trip receipt (accents, "la más rápida")
+- [x] Repeated words are now recorded (0 points)
+
+### PR 2 · `refactor/drop-run-json`
+- [ ] Stop writing and drop `runs.words_correct`, `words_error`, `chars_skipped` (separate deploy, so the previous code keeps working during PR 1's rollout); factory states for `run_words` in tests
+
+### PR 3 · `feat/trip-stats`
+- [ ] End-of-game stats: rejection reasons, accuracy, average answer time, "words you could have made" per plate (`plates` + `words`)
 
 ## F5 – Achievements (foundation done in F1 · PR 4)
 - [ ] Review and redefine the achievement list with the user
