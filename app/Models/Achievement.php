@@ -9,7 +9,6 @@ class Achievement extends Model
 {
     /**
      * Obtiene el usuario que tiene el logro
-     * @return BelongsTo
      */
     public function user(): BelongsTo
     {

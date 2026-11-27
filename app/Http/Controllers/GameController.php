@@ -2,28 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
-use App\Enums\GameModes;
-use App\Enums\GameDifficulties;
 use App\Enums\CountdownModes;
-use App\Models\User;
+use App\Enums\GameDifficulties;
+use App\Enums\GameModes;
 use App\Models\Run;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class GameController extends Controller
 {
     /**
      * Muestra la vista del juego modo contrarreloj
-     * @param Request $request
+     *
      * @return \Illuminate\Contracts\View\View
      */
     public function gameView(Request $request)
     {
         // Validar que los campos requeridos estén presentes
-        if (!$request->mode || !$request->difficulty ||($request->mode === GameModes::CONTRARELOJ->value() && !$request->countdown_time)) {
+        if (! $request->mode || ! $request->difficulty || ($request->mode === GameModes::CONTRARELOJ->value() && ! $request->countdown_time)) {
             return redirect()->route('menu.view')->with('error', 'Error: Datos de la run incompletos');
         }
 
@@ -46,12 +44,13 @@ class GameController extends Controller
             'run' => $run,
             'mode' => $request->mode,
             'difficulty' => $request->difficulty,
-            'countdown_time' => $countdownSeconds ?? null
+            'countdown_time' => $countdownSeconds ?? null,
         ]);
     }
-    
+
     /**
      * Devuelve la vista de modos de cuenta atrás para AJAX
+     *
      * @return \Illuminate\Contracts\View\View
      */
     public function countdownModesView()
@@ -61,6 +60,7 @@ class GameController extends Controller
 
     /**
      * Devuelve la vista de dificultades para AJAX
+     *
      * @return \Illuminate\Contracts\View\View
      */
     public function difficultyModesView()
@@ -70,9 +70,10 @@ class GameController extends Controller
 
     /**
      * Crea la run actual para el usuario
-     * @param string $mode GameModes
-     * @param string $difficulty GameDifficulties
-     * @param string $countdown_time CountdownModes|null
+     *
+     * @param  string  $mode  GameModes
+     * @param  string  $difficulty  GameDifficulties
+     * @param  string  $countdown_time  CountdownModes|null
      * @return Run
      */
     private function createCurrentRun($mode, $difficulty, $countdown_time = null)
@@ -87,21 +88,23 @@ class GameController extends Controller
                 'countdown_time' => $countdown_time ?? null,
                 'words_tried' => [],
                 'words_error' => [],
-                'words_correct' => []
+                'words_correct' => [],
             ]);
 
             // Devolver la run
             Log::info('Run creada correctamente');
+
             return $run;
         } catch (\Exception $e) {
             // Manejo del error
-            Log::error('Error creando la run actual: ' . $e->getMessage());
-            throw new \Exception('Error creando la run actual: ' . $e->getMessage());
+            Log::error('Error creando la run actual: '.$e->getMessage());
+            throw new \Exception('Error creando la run actual: '.$e->getMessage());
         }
     }
 
     /**
      * Obtiene la run actual para el usuario
+     *
      * @return Run
      */
     private function getCurrentRun($run_id)
@@ -111,24 +114,26 @@ class GameController extends Controller
             $run = Run::find($run_id);
 
             // Si la run no existe, se lanza un error
-            if (!$run) {
+            if (! $run) {
                 Log::error('Run no encontrada');
                 throw new \Exception('Run no encontrada');
             }
 
             // Devolver la run
             Log::info('Run obtenida correctamente');
+
             return $run;
         } catch (\Exception $e) {
             // Manejo del error
-            Log::error('Error obteniendo la run actual: ' . $e->getMessage());
-            throw new \Exception('Error obteniendo la run actual: ' . $e->getMessage());
+            Log::error('Error obteniendo la run actual: '.$e->getMessage());
+            throw new \Exception('Error obteniendo la run actual: '.$e->getMessage());
         }
     }
 
     /**
      * Crea las letras para la matrícula
-     * @param string $difficulty GameDifficulties
+     *
+     * @param  string  $difficulty  GameDifficulties
      * @return array
      */
     private function createChars($difficulty)
@@ -152,7 +157,7 @@ class GameController extends Controller
 
     /**
      * Comprueba la palabra y actualiza la puntuación
-     * @param Request $request
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function checkWord(Request $request)
@@ -174,15 +179,15 @@ class GameController extends Controller
 
         $validator = Validator::make($request->all(), $rules, $messages);
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()->first(),
                 'chars' => [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)],
-                'score' => $run->score
+                'score' => $run->score,
             ]);
         }
-        
+
         // Convertir la palabra a mayúsculas y obtener las letras de la matrícula
         $word = strtoupper($request->word);
         $chars = [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)];
@@ -191,7 +196,7 @@ class GameController extends Controller
         if ($run->difficulty === GameDifficulties::DIFICIL->value()) {
             $plateIndex = 0;
             $lettersInOrder = false;
-            
+
             for ($i = 0; $i < strlen($word); $i++) {
                 if ($plateIndex < count($chars) && $word[$i] === $chars[$plateIndex]) {
                     $plateIndex++;
@@ -201,21 +206,21 @@ class GameController extends Controller
                     }
                 }
             }
-            
-            if (!$lettersInOrder) {
+
+            if (! $lettersInOrder) {
                 // Añadir la palabra incorrecta a la run y restar puntos
                 $run->addErrorWord($word);
                 $run->removePoints(5);
-                
+
                 // Si la palabra no contiene todas las letras de la matrícula, se devuelve un mensaje de error
                 return response()->json([
                     'success' => false,
                     'message' => '¡Fallo! En modo difícil, las letras deben aparecer en el mismo orden. Has perdido 5 puntos.',
                     'chars' => $chars,
-                    'score' => $run->score
+                    'score' => $run->score,
                 ]);
             }
-        } 
+        }
 
         // Verificar que la palabra contiene todas las letras de la matrícula
         $requiredCounts = array_count_values($chars);
@@ -227,21 +232,21 @@ class GameController extends Controller
             if ($inWord < $count) {
                 $run->addErrorWord($word);
                 $run->removePoints(5);
-                
+
                 // Si la palabra no contiene todas las letras de la matrícula, se devuelve un mensaje de error
                 return response()->json([
                     'success' => false,
                     'message' => '¡Fallo! La palabra no contiene todas las letras de la matrícula. Has perdido 5 puntos.',
                     'chars' => $chars,
-                    'score' => $run->score
+                    'score' => $run->score,
                 ]);
             }
         }
-        
+
         try {
             // Verificar si la palabra existe en el diccionario de la API de la RAE
             $response = Http::withOptions([
-                'verify' => false // Desactivar la verificación del certificado SSL
+                'verify' => false, // Desactivar la verificación del certificado SSL
             ])->get("https://rae-api.com/api/words/{$word}");
 
             // Obtener los datos de la respuesta
@@ -261,68 +266,71 @@ class GameController extends Controller
                     'success' => true,
                     'message' => '¡Palabra válida! Has ganado 10 puntos.',
                     'chars' => $newChars,
-                    'score' => $run->score
+                    'score' => $run->score,
                 ]);
             } else {
                 // Añadir la palabra incorrecta a la run y restar puntos
                 $run->addErrorWord($word);
                 $run->removePoints(5);
-                
+
                 // Devolver la respuesta con las letras actuales y la puntuación actualizada
                 return response()->json([
                     'success' => false,
                     'message' => '¡Fallo! La palabra no existe en el diccionario de la RAE. Has perdido 5 puntos.',
                     'chars' => $chars,
-                    'score' => $run->score
+                    'score' => $run->score,
                 ]);
             }
-        } catch (\Exception $e) {           
+        } catch (\Exception $e) {
             // Si hay un error al verificar la palabra, se devuelve un mensaje de error
             return response()->json([
                 'success' => false,
                 'message' => 'Error al verificar la palabra. Por favor, inténtalo de nuevo.',
                 'chars' => $chars,
-                'score' => $run->score
+                'score' => $run->score,
             ]);
         }
     }
 
     /**
      * Cambia la matrícula
-     * @param Request $request
+     *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function changePlate(Request $request) {
+    public function changePlate(Request $request)
+    {
         // Obtener la run actual
         $run = $this->getCurrentRun($request->run_id);
 
         // Obtener las letras actuales de la matrícula
         $chars = [strtoupper($request->char1), strtoupper($request->char2), strtoupper($request->char3)];
-        
+
         // Añadir las letras a la run y restar puntos
-        $run->addCharsSkipped($chars);        
+        $run->addCharsSkipped($chars);
         $run->removePoints(5);
-        
+
         $newChars = $this->createChars($run->difficulty);
 
         return response()->json([
             'success' => false,
             'message' => '¡Imposible! La matrícula ha cambiado. Has perdido 5 puntos.',
             'chars' => $newChars,
-            'score' => $run->score
+            'score' => $run->score,
         ]);
     }
 
     /**
      * Reinicia la run
+     *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function resetRun(Request $request) {
+    public function resetRun(Request $request)
+    {
         // Obtener la run actual
         $run = $this->getCurrentRun($request->run_id);
 
         // Si la run está vacía, se elimina de forma permanente
-        if(empty($run->words_correct) && empty($run->words_error)) {
+        if (empty($run->words_correct) && empty($run->words_error)) {
             $run->forceDelete();
         } else {
             $run->delete();
@@ -333,7 +341,7 @@ class GameController extends Controller
 
         // Devolver la respuesta con el mensaje de éxito
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Run reiniciada correctamente',
         ]);
     }

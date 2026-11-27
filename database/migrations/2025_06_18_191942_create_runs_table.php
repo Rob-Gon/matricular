@@ -1,12 +1,11 @@
 <?php
 
+use App\Enums\CountdownModes;
+use App\Enums\GameDifficulties;
+use App\Enums\GameModes;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Enums\GameModes;
-use App\Enums\GameDifficulties;
-use App\Enums\CountdownModes;
 
 return new class extends Migration
 {
