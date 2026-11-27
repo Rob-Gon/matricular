@@ -27,7 +27,7 @@
                                 </p>
                                 @if ($owned)
                                     <p class="text-base font-bold">
-                                        Desbloqueado el {{ \Illuminate\Support\Carbon::parse($owned->pivot->unlocked_at)->format('d/m/Y') }}
+                                        Desbloqueado el <x-local-time :value="$owned->pivot->unlocked_at" :time="false" />
                                     </p>
                                 @endif
                             </div>

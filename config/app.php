@@ -65,7 +65,8 @@ return [
     |
     */
 
-    'timezone' => 'Europe/Madrid',
+    // Stored and served in UTC; pages show each visitor's local time (components/local-time).
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------
