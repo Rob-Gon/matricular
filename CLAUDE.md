@@ -37,6 +37,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - `app/Models` – `User`, `Run`, `Achievement` (pivot table `user_achievements`).
 - `app/Achievements` + `config/achievements.php` – achievement conditions and catalogue; `AchievementUnlocker` evaluates them. After editing the catalogue run `php artisan db:seed --class=AchievementsSeeder`.
 - `resources/js/game.js` – solo game client (Alpine component `game`, registered in `site.js`); the server stays authoritative.
+- `resources/js/sound.js` + `resources/sounds/{sfx,music}` – Howler.js player (Alpine store `sound`). Effects and tracks are picked up by file name; credit every new asset on `/creditos`.
 - `resources/views/components` – design system as anonymous Blade components (`plate`, `car`, `odometer`, `fuel-gauge`, `road-scene`, `sign`, `sticker`, `field`, `option`, `flash`). Every page uses `<x-layouts.app>`.
 - `resources/css/app.css` – Tailwind 4 theme tokens and component classes (`btn`, `paper`, `title-ink`, `field-*`, `opt`, `chip`, `plate`, `car`, `odometer`).
 - Target layout for new code: `app/Actions` or `app/Services` for game logic (word validation, plate generation, scoring), Form Requests for input, Policies for ownership, Events for achievements/broadcasts.
