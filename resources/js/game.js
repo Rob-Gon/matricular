@@ -192,7 +192,8 @@ export default (config) => ({
 
         this.over = true;
         clearInterval(this.timer);
-        this.$store.sound.stopMusic();
+        // The music carries on into the summary page.
+        this.$store.sound.handOffMusic();
 
         try {
             await fetch(config.urls.end, {

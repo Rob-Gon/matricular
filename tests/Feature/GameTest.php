@@ -91,6 +91,18 @@ class GameTest extends TestCase
         $this->assertDatabaseCount('runs', 0);
     }
 
+    public function test_the_game_screen_hides_the_site_header_so_the_word_box_fits(): void
+    {
+        $run = Run::factory()->create();
+
+        $this->actingAs($run->user)->get(route('game.show', $run))
+            ->assertOk()
+            ->assertDontSee('aria-label="Principal"', false)
+            ->assertSee('Tu palabra');
+
+        $this->actingAs($run->user)->get(route('menu.view'))->assertSee('aria-label="Principal"', false);
+    }
+
     public function test_a_user_cannot_play_another_users_run(): void
     {
         $run = Run::factory()->create();

@@ -2,7 +2,8 @@
 // every change arrives as a full "lobby.updated" snapshot and the grid animates from the old layout to
 // the new one (FLIP): new cars drive up into their bay, the cars behind a freed bay move forward.
 
-const MOVE_MS = 600;
+const MOVE_MS = 1000;
+const ENTER_MS = 1700;
 
 export default (config) => ({
     state: config.state,
@@ -13,6 +14,7 @@ export default (config) => ({
     errors: {},
     busy: false,
     copied: false,
+    kickTarget: null,
 
     async init() {
         this.resetForm();
@@ -98,7 +100,7 @@ export default (config) => ({
             }
 
             moved = true;
-            el.animate(keyframes, { duration: old ? MOVE_MS : 900, easing: 'cubic-bezier(.2,.8,.3,1)' });
+            el.animate(keyframes, { duration: old ? MOVE_MS : ENTER_MS, easing: 'cubic-bezier(.25,.7,.3,1)' });
         }
 
         if (moved) {
@@ -110,32 +112,35 @@ export default (config) => ({
         this.busy = true;
         this.errors = {};
 
+        let response;
+        let data;
         try {
-            const response = await fetch(url, {
+            response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': config.csrf },
                 body: JSON.stringify(body),
             });
-            const data = await response.json().catch(() => ({}));
-
-            if (response.status === 422) {
-                this.errors = Object.fromEntries(Object.entries(data.errors ?? {}).map(([key, messages]) => [key, messages[0]]));
-                return false;
-            }
-
-            if (!response.ok) {
-                this.errors = { general: 'No se ha podido guardar. Recarga la página e inténtalo de nuevo.' };
-                return false;
-            }
-
-            await this.apply(data);
-            return true;
+            data = await response.json().catch(() => ({}));
         } catch {
             this.errors = { general: 'No hay conexión con el servidor.' };
             return false;
         } finally {
             this.busy = false;
         }
+
+        if (response.status === 422) {
+            this.errors = Object.fromEntries(Object.entries(data.errors ?? {}).map(([key, messages]) => [key, messages[0]]));
+            return false;
+        }
+
+        // Only a lobby snapshot may replace the grid; anything else is a server-side failure.
+        if (!response.ok || !Array.isArray(data.players)) {
+            this.errors = { general: 'No se ha podido guardar. Recarga la página e inténtalo de nuevo.' };
+            return false;
+        }
+
+        await this.apply(data);
+        return true;
     },
 
     toggleReady() {
@@ -146,9 +151,16 @@ export default (config) => ({
         this.send('POST', config.urls.color, { color });
     },
 
-    kick(player) {
-        if (window.confirm(`¿Expulsar a ${player.name} de la sala?`)) {
-            this.send('POST', config.urls.kick, { player: player.id });
+    askKick(player) {
+        this.kickTarget = player;
+        this.$refs.kickDialog.showModal();
+    },
+
+    async kick() {
+        const player = this.kickTarget;
+        this.$refs.kickDialog.close();
+        if (player) {
+            await this.send('POST', config.urls.kick, { player: player.id });
         }
     },
 
@@ -176,7 +188,23 @@ export default (config) => ({
     },
 
     async copyCode() {
-        await navigator.clipboard?.writeText(this.state.code);
+        try {
+            await navigator.clipboard.writeText(this.state.code);
+        } catch {
+            // navigator.clipboard only exists on HTTPS and localhost; plain-HTTP hosts use the old API.
+            const field = Object.assign(document.createElement('textarea'), { value: this.state.code, readOnly: true });
+            field.className = 'fixed -left-[9999px]';
+            document.body.append(field);
+            field.select();
+            const copied = document.execCommand('copy');
+            field.remove();
+
+            if (!copied) {
+                this.errors = { general: `No se ha podido copiar. El código es ${this.state.code}.` };
+                return;
+            }
+        }
+
         this.copied = true;
         setTimeout(() => (this.copied = false), 2000);
     },

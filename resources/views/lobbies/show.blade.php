@@ -59,7 +59,7 @@
                                     class="absolute top-1.5 right-1.5 flex size-8 items-center justify-center rounded-full border-[3px] border-ink bg-signal text-base font-black text-white"
                                     x-show="isHost && player.id !== me"
                                     :aria-label="'Expulsar a ' + player.name"
-                                    @click="kick(player)"
+                                    @click="askKick(player)"
                                 >✕</button>
                                 <svg aria-hidden="true" viewBox="0 0 64 96" class="h-16 w-11" :class="connected(player) ? '' : 'opacity-40'">
                                     <rect x="4" y="12" width="10" height="20" rx="4" fill="#000000" /><rect x="50" y="12" width="10" height="20" rx="4" fill="#000000" />
@@ -121,6 +121,18 @@
                 <button type="button" class="btn" disabled title="Llega en la próxima actualización">Empezar carrera</button>
             </div>
         </div>
+
+        {{-- Host only: confirm before kicking a player. --}}
+        <dialog x-ref="kickDialog" aria-labelledby="kick-title" class="paper surface-light m-auto w-[min(28rem,calc(100vw-2rem))] p-7 backdrop:bg-black/60" @close="kickTarget = null">
+            <div class="flex flex-col gap-5">
+                <h2 id="kick-title" class="font-display text-3xl">¿Expulsar a <span x-text="kickTarget?.name"></span>?</h2>
+                <p class="text-xl">Saldrá de la parrilla. Podrá volver a entrar con el código mientras la carrera no haya empezado.</p>
+                <div class="flex flex-wrap gap-4">
+                    <button type="button" class="btn btn-danger" :disabled="busy" @click="kick()">Expulsar</button>
+                    <button type="button" class="btn" @click="$refs.kickDialog.close()">Cancelar</button>
+                </div>
+            </div>
+        </dialog>
 
         {{-- Host only: the rules of the next race. --}}
         <dialog x-ref="rulesDialog" aria-labelledby="rules-title" class="paper surface-light m-auto w-[min(40rem,calc(100vw-2rem))] p-7 backdrop:bg-black/60" @close="editing = false">

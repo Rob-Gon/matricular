@@ -17,13 +17,14 @@
     ];
 @endphp
 
-<x-layouts.app title="Partida" description="Partida en curso de Matricular." noindex>
+{{-- No site header: the game fills the screen, so the word box and its buttons fit on desktop. --}}
+<x-layouts.app title="Partida" description="Partida en curso de Matricular." noindex :header="false">
     <div
         x-data="game(@js($config))"
         @keydown.window="onKeydown($event)"
         @keyup.window="onKeyup($event)"
         @pointerdown.window="onPointerdown()"
-        class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-[56rem] xl:pb-10"
+        class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-dvh xl:gap-5 xl:pb-6"
     >
         <h1 class="sr-only">Partida</h1>
 
@@ -46,7 +47,7 @@
             @endif
         </div>
 
-        <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6 xl:mt-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_600px_minmax(0,1fr)] xl:gap-6">
+        <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6 xl:mt-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_min(600px,calc(100dvh-330px))_minmax(0,1fr)] xl:gap-6">
             {{-- The road is drawn behind the car, so the feedback card can wrap below it on small screens. --}}
             <div class="relative w-full max-w-[600px] xl:col-start-2">
                 <div class="road absolute bottom-[5%] left-1/2 h-[16.5%]! w-[200vw] -translate-x-1/2 xl:hidden" aria-hidden="true"></div>
@@ -75,10 +76,10 @@
         </div>
 
         {{-- On desktop the form is a card standing on the road. --}}
-        <form @submit.prevent="submit()" class="flex w-full max-w-[820px] flex-col gap-4 px-6 xl:max-w-[600px] xl:rounded-[1.6rem] xl:border-[5px] xl:border-ink xl:bg-enamel xl:py-6 xl:text-ink xl:shadow-hard-lg xl:[--focus:var(--color-plate)]">
+        <form @submit.prevent="submit()" class="flex w-full max-w-[820px] flex-col gap-4 px-6 xl:max-w-[720px] xl:rounded-[1.6rem] xl:border-[5px] xl:border-ink xl:bg-enamel xl:py-6 xl:text-ink xl:shadow-hard-lg xl:[--focus:var(--color-plate)]">
             <label for="word" class="font-display text-2xl text-mustard xl:text-ink">Tu palabra</label>
             <div class="flex flex-wrap items-stretch gap-4">
-                <div class="min-w-0 flex-[999_1_360px]">
+                <div class="min-w-0 flex-[999_1_360px] xl:basis-[300px]">
                     <input
                         id="word"
                         x-ref="word"
@@ -90,7 +91,7 @@
                         autocomplete="off"
                         autocapitalize="off"
                         spellcheck="false"
-                        placeholder="Escribe y pulsa Intro"
+                        placeholder="Escribe aquí"
                         autofocus
                         :disabled="over"
                         @paste.prevent
