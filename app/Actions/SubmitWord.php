@@ -4,15 +4,15 @@ namespace App\Actions;
 
 use App\Enums\GameDifficulties;
 use App\Models\Run;
+use App\Services\Dictionary;
 use App\Services\PlateGenerator;
-use App\Services\RaeDictionary;
 use App\Support\WordNormalizer;
 
 class SubmitWord
 {
     public function __construct(
         private PlateGenerator $plates,
-        private RaeDictionary $dictionary,
+        private Dictionary $dictionary,
     ) {}
 
     /**

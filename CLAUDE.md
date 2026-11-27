@@ -50,7 +50,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - Branch deployed: `main`. Environments: local · production (URL pending).
 
 ## External services & integrations
-- Word validation today: unofficial `https://rae-api.com/api/words/{word}` (being replaced by a local dictionary; may remain as fallback only).
+- Word validation: `App\Services\Dictionary` checks the local `words` table; the unofficial `https://rae-api.com/api/words/{word}` is only a cached fallback, and words it confirms are learned (`source = rae-api`).
 - Local dictionary: `words` table built from RLA-ES v2.9 es_ES (GPL/LGPL/MPL tri-license, pinned in `app/Dictionary/RlaEsSource.php`). Parts of speech in `word_categories` (written word → pos; a word's category is its form's or its lemma's) from Spanish Wiktionary via kaikki.org (CC BY-SA, credited on `/creditos`).
 - GitHub: https://github.com/Rob-Gon/matricular (public). Never commit secrets or real user data.
 
