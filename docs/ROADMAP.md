@@ -2,7 +2,7 @@
 
 Update this file at the end of every task: tick what is done, add findings, move new ideas to the backlog.
 
-## Current phase: F2 – Local dictionary (F1 done)
+## Current phase: F3 – Frontend rebuild (F2 done)
 
 ## F0 – Foundation
 - [x] Project `CLAUDE.md` and `.claude/rules/` (game, dictionary, realtime, design)
@@ -63,7 +63,8 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
   - 809,644 word/category rows in ~4 min; 95.7% of dictionary forms (72.9% of lemmas) get a category through their form or lemma
 - [x] PR 3 `feat/local-word-validation`: `Dictionary` service checks `words` first (one indexed lookup), RAE API as cached fallback; confirmed words are learned (`source = rae-api`, word/lemma/categories only); test pins local lookups under 5 ms p95
   - Measured locally: a whole `check-word` request takes ~600 ms even when the word is rejected before any lookup. The cost is the environment, not the dictionary: no OPcache in Laragon (~250 ms for `/up`) and database-backed session, cache and rate limiter
-- [ ] PR 4 `feat/solvable-plates`: `plates` table with solution counts (any order / in order); generator only picks plates with at least N solutions
+- [x] PR 4 `feat/solvable-plates`: `plates` table (8,000 plates) with solution counts in any order and in plate order; `PlateGenerator` only deals plates with at least `MIN_SOLUTIONS` (10), cached per difficulty; random fallback without the table; rebuilt weekly by the scheduler
+  - 1,420 plates (17.7%) had no solution at all and could be dealt before; eligible now: 2,685 easy, 5,634 medium, 4,203 hard
 
 ## F3 – Frontend rebuild
 - [ ] Tailwind 4 + Alpine; remove Bootstrap, jQuery, Sass, CDNs (fonts/icons self-hosted)
@@ -97,10 +98,11 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [ ] Domain
 - [ ] Redis, Reverb daemon, queue worker, scheduler, SSL
 - [ ] Deploy script runs `php artisan db:seed --class=AchievementsSeeder --force` after migrations
-- [ ] Run `php artisan dictionary:import` and `php artisan dictionary:categories` once on the server (and after updating the pinned dictionary version)
+- [ ] Run `php artisan dictionary:import`, `dictionary:categories` and `dictionary:plates` once on the server (and after updating the pinned dictionary version)
 - [ ] Security headers (CSP, HSTS), error monitoring, backups, uptime on `/up`
 - [ ] Load test lobbies at 16 players
 
 ## Backlog (new ideas)
+- Difficulty by solution count (e.g. hard deals plates with few solutions) and "words you could have made" at the end of a game, both from the `plates`/`words` tables
 - Performance: enable OPcache in Laragon (user action) and re-measure `check-word`; Redis for cache, session and rate limiter in production (F7); endpoint p95 in the F7 load test
 - Word suggestions: "Sugerir palabra" button after a rejected word → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → manual approval for anything not confirmed; n8n optional for notifications/approval via signed webhook
