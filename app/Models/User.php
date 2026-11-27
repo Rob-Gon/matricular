@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -56,38 +57,15 @@ class User extends Authenticatable
         return $this->hasMany(Run::class, 'user_id', 'id');
     }
 
-    public function achievements()
+    /**
+     * Logros desbloqueados
+     *
+     * @return BelongsToMany<Achievement, $this>
+     */
+    public function achievements(): BelongsToMany
     {
-        return $this->hasManyThrough(Achievement::class, UserAchievement::class);
-    }
-
-    // Verificar si un usuario tiene un logro específico
-    public function hasAchievement($achievementId)
-    {
-        return $this->userAchievements()->where('achievement_id', $achievementId)->exists();
-    }
-
-    // Desbloquear un logro
-    public function unlockAchievement($achievementId)
-    {
-        if (! $this->hasAchievement($achievementId)) {
-            UserAchievement::create([
-                'user_id' => $this->id,
-                'achievement_id' => $achievementId,
-                'unlocked_at' => now(),
-            ]);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // Obtener logros desbloqueados
-    public function unlockedAchievements()
-    {
-        return $this->achievements()->whereHas('userAchievements', function ($query) {
-            $query->where('user_id', $this->id)->whereNotNull('unlocked_at');
-        });
+        return $this->belongsToMany(Achievement::class, 'user_achievements')
+            ->withPivot('run_id', 'unlocked_at')
+            ->withTimestamps();
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ScoreController;
@@ -56,7 +57,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/scores/filter', [ScoreController::class, 'filter'])->name('scores.filter');
 
     // Logros
-    Route::get('/achievements', function () {
-        return view('main.achievements');
-    })->name('achievements.view');
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.view');
 });

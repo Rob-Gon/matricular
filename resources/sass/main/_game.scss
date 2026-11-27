@@ -358,3 +358,18 @@
         padding: 15px 30px;
     }
 } 
+// Achievement toasts: below the navbar and above it in stacking order, readable on the dark theme.
+#achievement-toasts {
+    top: 4.5rem !important;
+    z-index: 2000;
+
+    .toast {
+        background-color: $white;
+        color: $dark-black;
+        border: 2px solid $primary-yellow;
+
+        .toast-header {
+            color: $dark-black;
+        }
+    }
+}

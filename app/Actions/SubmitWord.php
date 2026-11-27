@@ -17,8 +17,9 @@ class SubmitWord
 
     /**
      * Validates the word against the run's current plate and updates the run.
+     * On success, `word` holds the normalized word that was stored.
      *
-     * @return array{success: bool, message: string, game_over?: bool}
+     * @return array{success: bool, message: string, game_over?: bool, word?: string}
      */
     public function handle(Run $run, string $input): array
     {
@@ -60,7 +61,7 @@ class SubmitWord
             $run->plate = $this->plates->generate(GameDifficulties::from($run->difficulty));
             $run->save();
 
-            return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.'];
+            return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'word' => $word];
         });
     }
 

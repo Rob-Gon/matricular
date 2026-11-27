@@ -8,63 +8,22 @@ use Illuminate\Database\Seeder;
 class AchievementsSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Syncs the achievements table with config/achievements.php. Safe to run on every deploy:
+     * existing rows are updated by key, so players keep what they unlocked.
      */
     public function run(): void
     {
-        $achievements = [
-            [
-                'name' => 'Pasito a pasito...',
-                'description' => 'Completa tu primer juego',
-            ],
-            [
-                'name' => 'El menos picado',
-                'description' => 'Juega 5 juegos consecutivos',
-            ],
-            [
-                'name' => 'Deberías tocar pasto',
-                'description' => 'Juega 25 juegos en un día',
-            ],
-            [
-                'name' => 'Matriculando fuerte',
-                'description' => 'Consigue 500 puntos en un solo juego',
-            ],
-            [
-                'name' => 'Matricúlame esta',
-                'description' => 'Consigue 250 puntos en un solo juego (Modo Difícil)',
-            ],
-            [
-                'name' => 'Bachillerato de letras',
-                'description' => 'Acierta 5 sustantivos seguidos',
-            ],
-            [
-                'name' => 'Bachillerato de artes',
-                'description' => 'Acierta 5 adjetivos seguidos',
-            ],
-            [
-                'name' => 'Bachillerato de letras',
-                'description' => 'Acierta 5 verbos seguidos',
-            ],
-            [
-                'name' => '!Palíndromo!',
-                'description' => 'Acierta una palabra que sea un palíndromo',
-            ],
-            [
-                'name' => '!Calambur!',
-                'description' => 'Acierta una palabra que sea un calambur',
-            ],
-            [
-                'name' => '!Palíndromo!',
-                'description' => 'Acierta una palabra que sea un palíndromo',
-            ],
-            [
-                'name' => 'Platino Compulsivo',
-                'description' => 'Consigue todos los logros',
-            ],
-        ];
+        $rows = collect(config('achievements'))->values()->map(fn (array $achievement, int $index) => [
+            'key' => $achievement['key'],
+            'name' => $achievement['name'],
+            'description' => $achievement['description'],
+            'icon' => $achievement['icon'],
+            'hidden' => $achievement['hidden'],
+            'sort' => $index,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->all();
 
-        foreach ($achievements as $achievement) {
-            Achievement::firstOrCreate(['name' => $achievement['name']], $achievemen);
-        }
+        Achievement::upsert($rows, ['key'], ['name', 'description', 'icon', 'hidden', 'sort', 'updated_at']);
     }
 }

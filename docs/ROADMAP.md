@@ -2,7 +2,7 @@
 
 Update this file at the end of every task: tick what is done, add findings, move new ideas to the backlog.
 
-## Current phase: F1 – Fixes & hardening (PR 1–3 of 4 done)
+## Current phase: F2 – Local dictionary (F1 done)
 
 ## F0 – Foundation
 - [x] Project `CLAUDE.md` and `.claude/rules/` (game, dictionary, realtime, design)
@@ -46,10 +46,13 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] Remove user emails from rankings (view and JSON); `remember_token` no longer mass assignable
 - [x] Remove dead `app/Http/Kernel.php`, `CheckSessionExpiration`, `session-manager.js`, `/extend-session` and the `session-start-time` meta (decision: rely on Laravel session + remember me)
 
-### PR 4 · `fix/achievements-models`
-- [ ] Seeder column mismatch (`name` vs `achievement`), typo `$achievemen`, duplicated entries, "!" instead of "¡"
-- [ ] Model relations (`belongsToMany`) and `$fillable`
-- [ ] `phpstan-baseline.neon` down to zero
+### PR 4 · `feat/achievements` (replaced the planned models fix; brings F5 forward)
+- [x] Catalogue in `config/achievements.php` (stable `key`, name, description, icon, hidden); `AchievementsSeeder` upserts it by key
+- [x] One class per unlock condition in `app/Achievements` (`WordAchievement` after each accepted word, `RunAchievement` when a run ends)
+- [x] `AchievementUnlocker`: one query for what the player owns, in-memory checks, race-safe `insertOrIgnore`, platinum when all others are owned
+- [x] Toast (Bootstrap toast for now, no focus steal) from the `achievements` field of game responses; `/achievements` page with hidden ones as "???"
+- [x] Initial set: first game, long word (12+), palindrome (hidden), 500 points, 250 points on hard, 5 games in 10 minutes, 25 games in a day, platinum
+- [x] `phpstan-baseline.neon` removed (zero legacy errors)
 
 ## F2 – Local dictionary
 - [ ] Verify licenses (Wiktionary/kaikki CC BY-SA, Hunspell es_ES)
@@ -71,8 +74,12 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [ ] `run_words` table (word, plate, valid, reason, points, elapsed_ms) replacing JSON arrays
 - [ ] Settings stored per run; end-of-game stats screen
 
-## F5 – Achievements
-- [ ] Event-driven unlocks (`WordAccepted`, `RunFinished`), achievements page
+## F5 – Achievements (foundation done in F1 · PR 4)
+- [ ] Review and redefine the achievement list with the user
+- [ ] Part-of-speech achievements after F2: 5 nouns / adjectives / verbs in a row ("Bachillerato de letras / artes / ciencias")
+- [ ] Run achievements for countdowns that expire with the tab closed (today only checked when the client calls `game.end`)
+- [ ] Optional Steam-like extras: progress (12/25), rarity (% of players)
+- [ ] Toast moves to Alpine in F3; multiplayer unlocks pushed over Reverb in F6
 
 ## F6 – Multiplayer
 - [ ] Reverb + Echo setup, lobby create/join (code + optional password), presence and ready state
@@ -85,6 +92,7 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] Hosting decision: Forge + one VPS (Hetzner, EU), shared with other personal projects; move to a dedicated server if load requires it
 - [ ] Domain
 - [ ] Redis, Reverb daemon, queue worker, scheduler, SSL
+- [ ] Deploy script runs `php artisan db:seed --class=AchievementsSeeder --force` after migrations
 - [ ] Security headers (CSP, HSTS), error monitoring, backups, uptime on `/up`
 - [ ] Load test lobbies at 16 players
 

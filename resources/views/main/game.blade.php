@@ -67,6 +67,9 @@
 
     <div id="message"></div>
 
+    {{-- Achievement notifications: they never take focus away from the word input. --}}
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="achievement-toasts"></div>
+
     <div class="game-buttons">
         @if($mode === 'Infinito')
             <button type="button" class="btn btn-danger end-game change-plate" id="btn-end-game">
