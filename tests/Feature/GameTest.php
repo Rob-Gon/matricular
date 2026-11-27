@@ -175,6 +175,8 @@ class GameTest extends TestCase
     public function test_words_within_the_latency_grace_are_accepted(): void
     {
         $this->fakeDictionary(true);
+        // Frozen clock: the column stores whole seconds, so a real clock could drift past the 2 s grace.
+        $this->freezeTime();
         $run = Run::factory()->countdown()->create(['plate' => 'BRC', 'ends_at' => now()->subSecond()]);
 
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'barco'])

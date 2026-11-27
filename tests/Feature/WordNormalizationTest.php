@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Run;
-use App\Services\RaeDictionary;
+use App\Services\Dictionary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -47,20 +47,20 @@ class WordNormalizationTest extends TestCase
     {
         $this->fakeNotFound(['niño', 'vino', 'nido']);
 
-        $this->assertFalse(app(RaeDictionary::class)->exists('nino'));
+        $this->assertFalse(app(Dictionary::class)->exists('nino'));
     }
 
     public function test_diaeresis_is_optional(): void
     {
         $this->fakeNotFound(['pingüino']);
 
-        $this->assertTrue(app(RaeDictionary::class)->exists('pinguino'));
+        $this->assertTrue(app(Dictionary::class)->exists('pinguino'));
     }
 
     public function test_answers_are_cached_by_key(): void
     {
         Http::fake(['rae-api.com/*' => Http::response(['ok' => true])]);
-        $dictionary = app(RaeDictionary::class);
+        $dictionary = app(Dictionary::class);
 
         $this->assertTrue($dictionary->exists('camión'));
         $this->assertTrue($dictionary->exists('CAMION'));
@@ -73,7 +73,7 @@ class WordNormalizationTest extends TestCase
         Http::fakeSequence('rae-api.com/*')
             ->pushFailedConnection()
             ->push(['ok' => true]);
-        $dictionary = app(RaeDictionary::class);
+        $dictionary = app(Dictionary::class);
 
         $this->assertNull($dictionary->exists('barco'));
         $this->assertTrue($dictionary->exists('barco'));

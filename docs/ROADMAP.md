@@ -61,7 +61,8 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
   - Enclitic forms ("dámelo", "comerlo") excluded like the RAE; a few appear as literal RLA-ES entries ("dámelo", "yéndose"), accepted as-is
 - [x] PR 2 `feat/dictionary-pos`: `word_categories` from Spanish Wiktionary (kaikki.org JSONL, streamed) + `/creditos` page with CC BY-SA attribution
   - 809,644 word/category rows in ~4 min; 95.7% of dictionary forms (72.9% of lemmas) get a category through their form or lemma
-- [ ] PR 3 `feat/local-word-validation`: validate against `words` first, RAE API as cached fallback; words the API confirms are stored (`source = rae-api`, word/lemma/category only); benchmark p95 < 5 ms
+- [x] PR 3 `feat/local-word-validation`: `Dictionary` service checks `words` first (one indexed lookup), RAE API as cached fallback; confirmed words are learned (`source = rae-api`, word/lemma/categories only); test pins local lookups under 5 ms p95
+  - Measured locally: a whole `check-word` request takes ~600 ms even when the word is rejected before any lookup. The cost is the environment, not the dictionary: no OPcache in Laragon (~250 ms for `/up`) and database-backed session, cache and rate limiter
 - [ ] PR 4 `feat/solvable-plates`: `plates` table with solution counts (any order / in order); generator only picks plates with at least N solutions
 
 ## F3 – Frontend rebuild
@@ -101,4 +102,5 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [ ] Load test lobbies at 16 players
 
 ## Backlog (new ideas)
+- Performance: enable OPcache in Laragon (user action) and re-measure `check-word`; Redis for cache, session and rate limiter in production (F7); endpoint p95 in the F7 load test
 - Word suggestions: "Sugerir palabra" button after a rejected word → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → manual approval for anything not confirmed; n8n optional for notifications/approval via signed webhook
