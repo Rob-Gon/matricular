@@ -15,7 +15,7 @@
                             <th scope="col">Usuario</th>
                             <th scope="col">Puntuación</th>
                             <th scope="col">Modo</th>
-                            <th scope="col">Dificultad</th>
+                            <th scope="col">Letras</th>
                             <th scope="col">Fecha</th>
                         </tr>
                     </thead>
@@ -38,7 +38,7 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-warning text-dark">
-                                        {{ ucfirst($run->difficulty ?? 'Desconocido') }}
+                                        {{ $run->letter_set === App\Enums\LetterSets::SIMPLE ? 'Simples' : 'Todas' }}{{ $run->ordered ? ', en orden' : '' }}
                                     </span>
                                 </td>
                                 <td>

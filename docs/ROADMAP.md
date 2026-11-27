@@ -78,8 +78,9 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 - [x] Favicon (`favicon.svg` + `favicon.ico`)
 
 ### PR 2 · `feat/game-settings`
-- [ ] Settings replace Easy/Medium/Hard: letter set (simple | full) and ordered letters; migration on `runs`, `StartGameRequest`, `PlateGenerator`, hard-mode achievement redefined
-- [ ] "Prepara el viaje" settings screen
+- [x] Settings replace Easy/Medium/Hard: letter set (simple | full) and ordered letters, combinable (simple + ordered is new); `runs.difficulty` migrated to `letter_set` + `ordered` (reversible, backfilled); `PlateGenerator` cached per combination; "Matricúlame esta" now needs all letters in order
+- [x] "Prepara el viaje" settings screen (`/game/setup`) with a live summary; the legacy menu links to it and its AJAX modals are gone
+- [x] Rankings filter accepts `letter_set` and `ordered` (validated); the legacy scores page lost its difficulty icons until PR 4 rebuilds it
 
 ### PR 3 · `feat/game-screen`
 - [ ] Game screen in Alpine + `fetch` replacing `game-manager.js`: car + plate drop, fuel-gauge timer, odometer, road-sign feedback, achievement toast
@@ -98,7 +99,7 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 
 ## F4 – Game data & stats
 - [ ] `run_words` table (word, plate, valid, reason, points, elapsed_ms) replacing JSON arrays
-- [ ] Settings stored per run; end-of-game stats screen
+- [ ] End-of-game stats screen
 
 ## F5 – Achievements (foundation done in F1 · PR 4)
 - [ ] Review and redefine the achievement list with the user

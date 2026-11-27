@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\CountdownModes;
-use App\Enums\GameDifficulties;
 use App\Enums\GameModes;
+use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +23,8 @@ class RunFactory extends Factory
             'user_id' => User::factory(),
             'score' => 0,
             'mode' => GameModes::INFINITO->value,
-            'difficulty' => GameDifficulties::FACIL->value,
+            'letter_set' => LetterSets::SIMPLE,
+            'ordered' => false,
             'countdown_time' => null,
             'plate' => 'BRC',
             'ends_at' => null,
@@ -41,8 +42,8 @@ class RunFactory extends Factory
         ]);
     }
 
-    public function difficulty(GameDifficulties $difficulty): static
+    public function settings(LetterSets $letterSet, bool $ordered = false): static
     {
-        return $this->state(fn () => ['difficulty' => $difficulty->value]);
+        return $this->state(fn () => ['letter_set' => $letterSet, 'ordered' => $ordered]);
     }
 }

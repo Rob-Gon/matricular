@@ -2,7 +2,6 @@
 @section('content')
     @php
         use App\Enums\GameModes;
-        use App\Enums\GameDifficulties;
         use App\Enums\CountdownModes;
     @endphp
     
@@ -21,20 +20,6 @@
                         </span>
                         <span class="filter-icon filter-mode" data-mode="{{ GameModes::INFINITO->value }}" title="Infinito">
                             <i class="fas fa-infinity text-primary"></i>
-                        </span>
-
-                        <!-- Filtros de dificultad -->
-                        <span class="filter-icon filter-difficulty ms-3 active" data-difficulty="" title="Todas las dificultades">
-                            <i class="fas fa-star text-secondary"></i>
-                        </span>
-                        <span class="filter-icon filter-difficulty" data-difficulty="{{ GameDifficulties::FACIL->value }}" title="Fácil">
-                            <i class="fas fa-star text-success"></i>
-                        </span>
-                        <span class="filter-icon filter-difficulty" data-difficulty="{{ GameDifficulties::MEDIO->value }}" title="Medio">
-                            <i class="fas fa-star-half-alt text-warning"></i>
-                        </span>
-                        <span class="filter-icon filter-difficulty" data-difficulty="{{ GameDifficulties::DIFICIL->value }}" title="Difícil">
-                            <i class="fas fa-star text-danger"></i>
                         </span>
 
                         <!-- Filtros de tiempo -->

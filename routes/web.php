@@ -50,8 +50,7 @@ Route::middleware('auth')->group(function () {
     // Juego
     Route::prefix('game')->name('game.')->controller(GameController::class)->group(function () {
         Route::post('/', 'start')->name('start');
-        Route::get('/countdown/modes', 'countdownModesView')->name('countdown-modes');
-        Route::get('/difficulty/modes', 'difficultyModesView')->name('difficulty-modes');
+        Route::get('/setup', 'setup')->name('setup');
         Route::get('/{run}', 'show')->whereNumber('run')->name('show');
 
         Route::middleware('throttle:game')->whereNumber('run')->group(function () {

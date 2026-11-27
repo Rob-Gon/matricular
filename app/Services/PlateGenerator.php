@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\GameDifficulties;
+use App\Enums\LetterSets;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -19,37 +19,40 @@ class PlateGenerator
 
     public const CACHE_PREFIX = 'plates:eligible:';
 
-    public function generate(GameDifficulties $difficulty): string
+    public function generate(LetterSets $letterSet, bool $ordered): string
     {
-        $eligible = $this->eligible($difficulty);
+        $eligible = $this->eligible($letterSet, $ordered);
 
         // Without the plates table (fresh install, tests) fall back to random letters.
         if ($eligible === []) {
-            return $this->randomPlate($difficulty);
+            return $this->randomPlate($letterSet);
         }
 
         return $eligible[array_rand($eligible)];
     }
 
+    public static function cacheKey(LetterSets $letterSet, bool $ordered): string
+    {
+        return self::CACHE_PREFIX.$letterSet->value.($ordered ? ':ordered' : ':any');
+    }
+
     /**
      * @return list<string>
      */
-    private function eligible(GameDifficulties $difficulty): array
+    private function eligible(LetterSets $letterSet, bool $ordered): array
     {
-        return Cache::remember(self::CACHE_PREFIX.$difficulty->value, now()->addDay(), function () use ($difficulty): array {
-            $column = $difficulty === GameDifficulties::DIFICIL ? 'solutions_ordered' : 'solutions';
-
+        return Cache::remember(self::cacheKey($letterSet, $ordered), now()->addDay(), function () use ($letterSet, $ordered): array {
             return DB::table('plates')
-                ->where($column, '>=', self::MIN_SOLUTIONS)
-                ->when($difficulty === GameDifficulties::FACIL, fn ($query) => $query->where('simple', true))
+                ->where($ordered ? 'solutions_ordered' : 'solutions', '>=', self::MIN_SOLUTIONS)
+                ->when($letterSet === LetterSets::SIMPLE, fn ($query) => $query->where('simple', true))
                 ->pluck('plate')
                 ->all();
         });
     }
 
-    private function randomPlate(GameDifficulties $difficulty): string
+    private function randomPlate(LetterSets $letterSet): string
     {
-        $letters = $difficulty === GameDifficulties::FACIL ? self::SIMPLE_LETTERS : self::FULL_LETTERS;
+        $letters = $letterSet->letters();
 
         $plate = '';
         for ($i = 0; $i < 3; $i++) {

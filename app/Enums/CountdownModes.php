@@ -16,6 +16,13 @@ enum CountdownModes: string
         return $this->value;
     }
 
+    public function shortLabel(): string
+    {
+        $seconds = $this->seconds();
+
+        return $seconds < 60 ? "{$seconds} s" : ($seconds / 60).' min';
+    }
+
     public function seconds(): int
     {
         return match ($this) {
