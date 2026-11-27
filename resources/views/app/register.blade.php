@@ -1,45 +1,19 @@
-@extends('layouts.master-layout')
+<x-layouts.app title="Crear cuenta" description="Crea tu cuenta de Matricular para jugar, entrar en la clasificación y desbloquear logros.">
+    <div class="px-6 pt-4 pb-24">
+        <div class="mx-auto flex max-w-xl flex-col gap-8">
+            <h1 class="title-ink text-[clamp(3rem,8vw,4.5rem)]">Crear cuenta</h1>
 
-@section('title', 'Registro')
+            <form method="POST" action="{{ route('register') }}" class="paper surface-light flex flex-col gap-5 p-7">
+                @csrf
+                <x-field name="name" label="Nombre" hint="Es el que verán los demás en la clasificación." autocomplete="nickname" maxlength="255" required autofocus />
+                <x-field name="email" label="Correo electrónico" type="email" autocomplete="email" required />
+                <x-field name="password" label="Contraseña" type="password" autocomplete="new-password" required />
+                <x-field name="password_confirmation" label="Repite la contraseña" type="password" autocomplete="new-password" required />
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card mt-5">
-                <div class="card-header">
-                    <h3 class="text-center">Registrarse</h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ route('register') }}" id="register-form">
-                        @csrf
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nombre:</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" required>
-                        </div>
+                <button type="submit" class="btn btn-primary self-start">Crear cuenta</button>
+            </form>
 
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email:</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Contraseña:</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password_confirmation" class="form-label">Confirmar Contraseña:</label>
-                            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Registrarse</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            <p class="text-xl">¿Ya tienes cuenta? <a class="font-bold underline hover:text-mustard" href="{{ route('login.view') }}">Entra</a>.</p>
         </div>
     </div>
-</div>
-@endsection 
+</x-layouts.app>

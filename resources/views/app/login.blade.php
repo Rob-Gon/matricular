@@ -1,64 +1,22 @@
-@extends('layouts.master-layout')
+<x-layouts.app title="Entrar" description="Entra en Matricular para jugar y guardar tus puntuaciones y logros.">
+    <div class="px-6 pt-4 pb-24">
+        <div class="mx-auto flex max-w-xl flex-col gap-8">
+            <h1 class="title-ink text-[clamp(3rem,8vw,4.5rem)]">Entrar</h1>
 
-@section('title', 'Login')
+            <form method="POST" action="{{ route('login') }}" class="paper surface-light flex flex-col gap-5 p-7">
+                @csrf
+                <x-field name="email" label="Correo electrónico" type="email" autocomplete="email" required autofocus />
+                <x-field name="password" label="Contraseña" type="password" autocomplete="current-password" required />
 
-@section('content')
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card mt-5">
-                    <div class="card-header">
-                        <h3 class="text-center">Iniciar Sesión</h3>
-                    </div>
-                    <div class="card-body">
+                <label class="flex min-h-11 items-center gap-3 text-xl font-bold">
+                    <input type="checkbox" name="remember" value="1" class="size-6 accent-plate" @checked(old('remember'))>
+                    Recordarme en este dispositivo
+                </label>
 
-                        @if($errors->any())
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                <ul class="mb-0">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
+                <button type="submit" class="btn btn-primary self-start">Entrar</button>
+            </form>
 
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                {{ session('error') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        @endif
-
-                        <form method="POST" action="{{ route('login') }}" id="login-form">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email:</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Contraseña:</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="remember" name="remember" value="1">
-                                <label class="form-check-label" for="remember">
-                                    Recordarme
-                                </label>
-                            </div>
-
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-                            </div>
-                            
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <p class="text-xl">¿Aún no tienes cuenta? <a class="font-bold underline hover:text-mustard" href="{{ route('register.view') }}">Crea una</a>.</p>
         </div>
     </div>
-@endsection
+</x-layouts.app>
