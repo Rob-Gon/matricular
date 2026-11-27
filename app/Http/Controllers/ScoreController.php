@@ -59,6 +59,8 @@ class ScoreController extends Controller
             ->selectRaw('COUNT(runs.id) as total_runs')
             ->join('runs', 'users.id', '=', 'runs.user_id')
             ->whereNull('runs.deleted_at')
+            // Multiplayer runs have their own stats; the solo rankings never count them.
+            ->whereNull('runs.lobby_match_id')
             ->whereExists(fn ($query) => $query->select('id')->from('run_words')
                 ->whereColumn('run_words.run_id', 'runs.id')
                 ->where('run_words.kind', RunWord::KIND_WORD))

@@ -4,6 +4,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\LobbyController;
+use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ScoreController;
 use App\Models\Run;
 use Illuminate\Http\Request;
@@ -89,6 +90,19 @@ Route::middleware('auth')->group(function () {
             Route::post('/{lobby}/color', 'color')->name('color');
             Route::put('/{lobby}/rules', 'rules')->name('rules');
             Route::post('/{lobby}/kick', 'kick')->name('kick');
+        });
+
+        // Parallel race
+        Route::controller(RaceController::class)->group(function () {
+            Route::get('/{lobby}/race', 'show')->name('race');
+            Route::get('/{lobby}/results', 'results')->name('results');
+
+            Route::middleware('throttle:game')->group(function () {
+                Route::post('/{lobby}/start', 'start')->name('start');
+                Route::post('/{lobby}/race/words', 'word')->name('race.word');
+                Route::post('/{lobby}/race/plate', 'plate')->name('race.plate');
+                Route::post('/{lobby}/race/end', 'end')->name('race.end');
+            });
         });
     });
 });

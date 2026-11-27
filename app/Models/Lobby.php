@@ -86,6 +86,20 @@ class Lobby extends Model
     }
 
     /**
+     * @return HasMany<LobbyMatch, $this>
+     */
+    public function matches(): HasMany
+    {
+        return $this->hasMany(LobbyMatch::class);
+    }
+
+    /** The match being played, or the last one played. */
+    public function latestMatch(): ?LobbyMatch
+    {
+        return $this->matches()->latest('id')->first();
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function host(): BelongsTo

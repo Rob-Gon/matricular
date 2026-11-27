@@ -35,6 +35,10 @@ class SubmitWord
                 return ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true];
             }
 
+            if (! $run->hasStarted()) {
+                return ['success' => false, 'message' => 'Espera al semáforo verde.'];
+            }
+
             // Stored and compared by key, so "camión" and "camion" are the same word.
             $input = trim($input);
             $word = WordNormalizer::key($input);
@@ -71,7 +75,7 @@ class SubmitWord
             }
 
             $attempt = $run->addCorrectWord($word, $input, $form, $this->dictionary->categories($word));
-            $run->dealPlate($this->plates->generate($run->letter_set, $run->ordered));
+            $run->dealPlate($run->nextPlate($this->plates));
             $run->save();
 
             return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'attempt' => $attempt];

@@ -59,6 +59,11 @@ class LobbyController extends Controller
                 ->with('error', 'No estás en esa sala. Escribe su código para entrar.');
         }
 
+        // During a race the grid is not reachable: players are sent back into their run.
+        if ($lobby->status === Lobby::STATUS_PLAYING && $lobby->latestMatch()?->runOf($request->user()) !== null) {
+            return redirect()->route('lobbies.race', $lobby);
+        }
+
         return view('lobbies.show', [
             'lobby' => $lobby,
             'state' => $lobby->state(),
