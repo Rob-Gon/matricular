@@ -29,26 +29,26 @@ class RunFactory extends Factory
             'countdown_time' => null,
             'plate' => 'BRC',
             'ends_at' => null,
-            'words_correct' => [],
-            'words_error' => [],
         ];
     }
 
     /**
-     * Mirrors the JSON arrays given to the factory into run_words, as the backfill did for real runs.
-     * shortcut: goes away with the JSON columns (F4, next PR); tests will then create run_words directly.
+     * Creates the run's attempts: accepted words, rejected words and skipped plates (keys, uppercase).
+     *
+     * @param  list<string>  $valid
+     * @param  list<string>  $invalid
      */
-    public function configure(): static
+    public function attempts(array $valid = [], array $invalid = [], int $skips = 0): static
     {
-        return $this->afterCreating(function (Run $run): void {
-            foreach ($run->words_correct ?? [] as $key) {
+        return $this->afterCreating(function (Run $run) use ($valid, $invalid, $skips): void {
+            foreach ($valid as $key) {
                 $run->runWords()->create(['kind' => RunWord::KIND_WORD, 'plate' => $run->plate, 'input' => mb_strtolower($key), 'key' => $key, 'valid' => true, 'points' => Run::POINTS_CORRECT]);
             }
-            foreach ($run->words_error ?? [] as $key) {
+            foreach ($invalid as $key) {
                 $run->runWords()->create(['kind' => RunWord::KIND_WORD, 'plate' => $run->plate, 'input' => mb_strtolower($key), 'key' => $key, 'valid' => false, 'points' => -Run::POINTS_PENALTY]);
             }
-            foreach ($run->chars_skipped ?? [] as $letters) {
-                $run->runWords()->create(['kind' => RunWord::KIND_SKIP, 'plate' => implode('', $letters), 'points' => -Run::POINTS_PENALTY]);
+            for ($i = 0; $i < $skips; $i++) {
+                $run->runWords()->create(['kind' => RunWord::KIND_SKIP, 'plate' => $run->plate, 'points' => -Run::POINTS_PENALTY]);
             }
         });
     }

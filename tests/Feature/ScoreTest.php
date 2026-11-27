@@ -18,8 +18,8 @@ class ScoreTest extends TestCase
     {
         $viewer = User::factory()->create();
         $player = User::factory()->create(['name' => 'Jugadora']);
-        Run::factory()->for($player)->create(['score' => 30, 'words_correct' => ['BARCO', 'CABRA', 'BRECA']]);
-        Run::factory()->for($player)->create(['score' => -5, 'words_error' => ['BRCX']]);
+        Run::factory()->for($player)->attempts(valid: ['BARCO', 'CABRA', 'BRECA'])->create(['score' => 30]);
+        Run::factory()->for($player)->attempts(invalid: ['BRCX'])->create(['score' => -5]);
         Run::factory()->for($player)->create(['score' => 999]);
         Run::factory()->create(['score' => 500]);
 
@@ -35,10 +35,11 @@ class ScoreTest extends TestCase
 
     public function test_rankings_filter_by_settings_and_time(): void
     {
-        $simple = Run::factory()->create(['score' => 40, 'words_correct' => ['BARCO']]);
+        $simple = Run::factory()->attempts(valid: ['BARCO'])->create(['score' => 40]);
         $hard = Run::factory()->countdown(CountdownModes::TREINTA_SEGUNDOS)
             ->settings(LetterSets::FULL, ordered: true)
-            ->create(['score' => 20, 'words_correct' => ['BARCO']]);
+            ->attempts(valid: ['BARCO'])
+            ->create(['score' => 20]);
 
         $names = fn (array $query) => $this->actingAs($simple->user)
             ->get(route('scores.view', $query))
@@ -58,7 +59,7 @@ class ScoreTest extends TestCase
 
     public function test_recent_runs_link_to_their_trip_receipt(): void
     {
-        $run = Run::factory()->create(['score' => 15, 'words_correct' => ['BARCO'], 'ended_at' => now()]);
+        $run = Run::factory()->attempts(valid: ['BARCO'])->create(['score' => 15, 'ended_at' => now()]);
 
         $this->actingAs($run->user)->get(route('scores.view'))
             ->assertOk()
@@ -68,7 +69,7 @@ class ScoreTest extends TestCase
 
     public function test_the_menu_shows_the_personal_best_and_links_to_both_modes(): void
     {
-        $run = Run::factory()->create(['score' => 120, 'words_correct' => ['BARCO']]);
+        $run = Run::factory()->attempts(valid: ['BARCO'])->create(['score' => 120]);
 
         $this->actingAs($run->user)->get(route('menu.view'))
             ->assertOk()
@@ -81,7 +82,7 @@ class ScoreTest extends TestCase
     public function test_dates_are_sent_in_utc_for_the_browser_to_localize(): void
     {
         $this->travelTo(Carbon::parse('2026-11-27 12:24:00', 'UTC'));
-        $run = Run::factory()->create(['words_correct' => ['BARCO']]);
+        $run = Run::factory()->attempts(valid: ['BARCO'])->create();
 
         $this->actingAs($run->user)->get(route('scores.view'))
             ->assertSee('datetime="2026-11-27T12:24:00Z"', false)

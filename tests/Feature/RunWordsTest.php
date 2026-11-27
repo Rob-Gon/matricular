@@ -84,22 +84,4 @@ class RunWordsTest extends TestCase
             ->assertSeeInOrder(['La más larga', 'camionero', 'La más rápida', 'camión, 1,8 s'])
             ->assertDontSee('line-through">camion', false);
     }
-
-    public function test_the_backfill_copies_the_json_arrays_and_recovers_accents(): void
-    {
-        $run = Run::factory()->create();
-        DB::table('runs')->where('id', $run->id)->update([
-            'words_correct' => json_encode(['CAMION']),
-            'words_error' => json_encode(['BRCX']),
-            'chars_skipped' => json_encode([['M', 'T', 'R']]),
-        ]);
-        DB::table('run_words')->delete();
-
-        (require database_path('migrations/2026_11_27_140100_backfill_run_words.php'))->up();
-
-        $rows = DB::table('run_words')->where('run_id', $run->id)->orderBy('id')->get();
-        $this->assertSame(['camión', null, null], $rows->pluck('form')->all());
-        $this->assertSame([10, -5, -5], $rows->pluck('points')->map(fn ($points) => (int) $points)->all());
-        $this->assertSame([null, null, 'MTR'], $rows->pluck('plate')->all());
-    }
 }

@@ -27,9 +27,6 @@ use Illuminate\Support\Facades\DB;
  * @property Carbon|null $plate_dealt_at
  * @property Carbon|null $ends_at
  * @property Carbon|null $ended_at
- * @property list<string>|null $words_correct
- * @property list<string>|null $words_error
- * @property list<list<string>>|null $chars_skipped
  * @property-read Collection<int, RunWord> $runWords
  */
 class Run extends Model
@@ -60,9 +57,6 @@ class Run extends Model
         'plate_dealt_at',
         'ends_at',
         'ended_at',
-        'words_correct',
-        'words_error',
-        'chars_skipped',
     ];
 
     /**
@@ -73,9 +67,6 @@ class Run extends Model
         return [
             'letter_set' => LetterSets::class,
             'ordered' => 'boolean',
-            'words_correct' => 'array',
-            'words_error' => 'array',
-            'chars_skipped' => 'array',
             'ends_at' => 'datetime',
             'ended_at' => 'datetime',
         ];
@@ -195,19 +186,14 @@ class Run extends Model
         return $this->runWords()->where('valid', true)->where('key', $key)->exists();
     }
 
-    // shortcut: the JSON arrays are still written during the move to run_words; drop them once
-    // nothing reads them (F4, next PR).
-
     public function addCorrectWord(string $key, string $input, ?string $form): void
     {
-        $this->words_correct = [...($this->words_correct ?? []), $key];
         $this->score += self::POINTS_CORRECT;
         $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'form' => $form, 'valid' => true, 'points' => self::POINTS_CORRECT]);
     }
 
     public function addErrorWord(string $key, string $input, string $reason): void
     {
-        $this->words_error = [...($this->words_error ?? []), $key];
         $this->score -= self::POINTS_PENALTY;
         $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => $reason, 'points' => -self::POINTS_PENALTY]);
     }
@@ -220,7 +206,6 @@ class Run extends Model
 
     public function skipPlate(string $newPlate): void
     {
-        $this->chars_skipped = [...($this->chars_skipped ?? []), $this->plateLetters()];
         $this->score -= self::POINTS_PENALTY;
         $this->record(['kind' => RunWord::KIND_SKIP, 'points' => -self::POINTS_PENALTY]);
         $this->dealPlate($newPlate);

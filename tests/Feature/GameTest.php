@@ -112,7 +112,7 @@ class GameTest extends TestCase
             ->assertJson(['success' => true, 'score' => Run::POINTS_CORRECT]);
 
         $run->refresh();
-        $this->assertSame(['BARCO'], $run->words_correct);
+        $this->assertSame(['BARCO'], $run->runWords()->where('valid', true)->pluck('key')->all());
         $this->assertMatchesRegularExpression('/^[A-Z]{3}$/', $run->plate);
     }
 
@@ -157,7 +157,7 @@ class GameTest extends TestCase
     public function test_a_repeated_word_does_not_score_again(): void
     {
         $this->fakeDictionary(true);
-        $run = Run::factory()->create(['plate' => 'BRC', 'words_correct' => ['BARCO'], 'score' => 10]);
+        $run = Run::factory()->attempts(valid: ['BARCO'])->create(['plate' => 'BRC', 'score' => 10]);
 
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'Barco'])
             ->assertJson(['success' => false, 'score' => 10]);
@@ -173,7 +173,7 @@ class GameTest extends TestCase
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'brcaaa'])
             ->assertJson(['success' => false, 'score' => -Run::POINTS_PENALTY]);
 
-        $this->assertSame(['BRCAAA'], $run->fresh()->words_error);
+        $this->assertSame(['BRCAAA'], $run->runWords()->where('valid', false)->pluck('key')->all());
     }
 
     public function test_a_dictionary_outage_does_not_penalize(): void
@@ -185,7 +185,7 @@ class GameTest extends TestCase
             ->assertOk()
             ->assertJson(['success' => false, 'score' => 0]);
 
-        $this->assertSame([], $run->fresh()->words_error);
+        $this->assertSame(0, $run->runWords()->count());
     }
 
     public function test_words_after_the_countdown_are_rejected(): void
@@ -223,7 +223,7 @@ class GameTest extends TestCase
             ->assertOk()
             ->assertJson(['score' => -Run::POINTS_PENALTY]);
 
-        $this->assertSame([['B', 'R', 'C']], $run->fresh()->chars_skipped);
+        $this->assertSame(['BRC'], $run->runWords()->where('kind', 'skip')->pluck('plate')->all());
     }
 
     public function test_locked_updates_start_from_the_latest_row_instead_of_a_stale_copy(): void
@@ -267,13 +267,9 @@ class GameTest extends TestCase
     {
         $user = User::factory()->create();
         Run::factory()->for($user)->create(['score' => 80, 'ended_at' => now()]);
-        $run = Run::factory()->for($user)->create([
-            'score' => 15,
-            'ended_at' => now(),
-            'words_correct' => ['BARCO', 'CARBURACION'],
-            'words_error' => ['BRCAZA'],
-            'chars_skipped' => [['M', 'T', 'R']],
-        ]);
+        $run = Run::factory()->for($user)
+            ->attempts(valid: ['BARCO', 'CARBURACION'], invalid: ['BRCAZA'], skips: 1)
+            ->create(['score' => 15, 'ended_at' => now()]);
 
         $this->actingAs($run->user)->get(route('game.summary', $run))
             ->assertOk()
