@@ -32,6 +32,8 @@
                 <button type="submit" class="btn btn-primary text-2xl">Otra partida</button>
             </form>
             <a class="btn text-2xl" href="{{ route('game.setup', ['mode' => $run->mode]) }}">Cambiar ajustes</a>
+            {{-- The game's music carries on here; this is where to turn it down or off. --}}
+            <x-sound-controls x-init="$store.sound.resumeMusic()" class="self-center" />
         </div>
     </section>
 

@@ -2,6 +2,7 @@
     'title' => null,
     'description' => 'Juego de palabras con las letras de las matrículas españolas. Forma palabras con las tres letras antes de que se acabe la gasolina.',
     'noindex' => false,
+    'header' => true,
 ])
 
 @php
@@ -47,6 +48,7 @@
 
     <a href="#contenido" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 btn btn-sm btn-primary">Saltar al contenido</a>
 
+    @if ($header)
     <header x-data="{ open: false }" class="relative mx-auto w-full max-w-6xl px-6 py-5">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home.view') }}" class="title-ink text-3xl no-underline">Matricular</a>
@@ -90,6 +92,7 @@
             </nav>
         </div>
     </header>
+    @endif
 
     <x-flash />
 
