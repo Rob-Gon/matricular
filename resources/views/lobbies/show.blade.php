@@ -14,6 +14,8 @@
             'color' => route('lobbies.color', $lobby),
             'rules' => route('lobbies.rules', $lobby),
             'kick' => route('lobbies.kick', $lobby),
+            'start' => route('lobbies.start', $lobby),
+            'race' => route('lobbies.race', $lobby),
         ],
     ];
 @endphp
@@ -45,7 +47,7 @@
                 </div>
             </div>
 
-            <p x-show="errors.general" x-text="errors.general" x-cloak role="alert" class="paper surface-light px-5 py-3 text-xl font-bold text-signal"></p>
+            <p x-show="errors.general || errors.start" x-text="errors.general ?? errors.start" x-cloak role="alert" class="paper surface-light px-5 py-3 text-xl font-bold text-signal"></p>
 
             <div class="flex flex-wrap items-start gap-9">
                 <section aria-labelledby="plazas" class="flex min-w-0 flex-[999_1_600px] flex-col gap-4">
@@ -117,8 +119,8 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-end gap-5">
-                <p class="text-xl font-bold" x-text="waitingFor.length ? 'Falta que estén listos: ' + waitingFor.join(', ') + '.' : '¡Todos listos!'"></p>
-                <button type="button" class="btn" disabled title="Llega en la próxima actualización">Empezar carrera</button>
+                <p class="text-xl font-bold" x-text="startHint"></p>
+                <button type="button" class="btn" x-show="isHost" :class="canStart ? 'btn-primary' : ''" :disabled="busy || !canStart" @click="start()">Empezar carrera</button>
             </div>
         </div>
 

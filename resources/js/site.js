@@ -1,10 +1,13 @@
 import Alpine from 'alpinejs';
 import game from './game';
 import lobby from './lobby';
+import race, { raceResults } from './race';
 import sound from './sound';
 
 Alpine.data('game', game);
 Alpine.data('lobby', lobby);
+Alpine.data('race', race);
+Alpine.data('raceResults', raceResults);
 Alpine.store('sound', sound());
 
 // Live summary of the "Prepara el viaje" settings form.

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CountdownModes;
 use App\Enums\LetterSets;
+use App\Services\PlateGenerator;
 use Database\Factories\RunFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * @property int $id
  * @property int $user_id
+ * @property int|null $lobby_match_id
  * @property int $score
  * @property string $mode
  * @property LetterSets $letter_set
@@ -26,10 +28,12 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $countdown_time
  * @property int|null $countdown_seconds
  * @property string|null $plate
+ * @property int $plate_number
  * @property Carbon|null $plate_dealt_at
  * @property Carbon|null $ends_at
  * @property Carbon|null $ended_at
  * @property-read Collection<int, RunWord> $runWords
+ * @property-read LobbyMatch|null $lobbyMatch
  */
 class Run extends Model
 {
@@ -43,6 +47,9 @@ class Run extends Model
     /** Extra seconds after ends_at during which a word is still accepted, to absorb network latency. */
     public const LATENCY_GRACE_SECONDS = 2;
 
+    /** Global scope that hides multiplayer runs: solo routes, rankings, stats and achievements only see solo runs. */
+    public const SOLO_SCOPE = 'solo';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -50,6 +57,7 @@ class Run extends Model
      */
     protected $fillable = [
         'user_id',
+        'lobby_match_id',
         'score',
         'mode',
         'letter_set',
@@ -57,6 +65,7 @@ class Run extends Model
         'countdown_time',
         'countdown_seconds',
         'plate',
+        'plate_number',
         'plate_dealt_at',
         'ends_at',
         'ended_at',
@@ -75,6 +84,11 @@ class Run extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(self::SOLO_SCOPE, fn (Builder $query) => $query->whereNull($query->qualifyColumn('lobby_match_id')));
+    }
+
     /**
      * Obtiene el usuario que tiene la run
      *
@@ -83,6 +97,14 @@ class Run extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    /**
+     * @return BelongsTo<LobbyMatch, $this>
+     */
+    public function lobbyMatch(): BelongsTo
+    {
+        return $this->belongsTo(LobbyMatch::class);
     }
 
     /**
@@ -130,7 +152,7 @@ class Run extends Model
     public function withLock(callable $callback): mixed
     {
         return DB::transaction(function () use ($callback) {
-            static::whereKey($this->getKey())->lockForUpdate()->first();
+            static::withoutGlobalScope(self::SOLO_SCOPE)->whereKey($this->getKey())->lockForUpdate()->first();
             $this->refresh();
 
             return $callback();
@@ -190,7 +212,20 @@ class Run extends Model
     public function dealPlate(string $plate): void
     {
         $this->plate = $plate;
+        $this->plate_number++;
         $this->plate_dealt_at = now();
+    }
+
+    /** The plate after the current one: random in solo, the match's shared sequence in multiplayer. */
+    public function nextPlate(PlateGenerator $plates): string
+    {
+        return $this->lobbyMatch?->plateAt($this->plate_number + 1) ?? $plates->generate($this->letter_set, $this->ordered);
+    }
+
+    /** A match run waits for the traffic light: its first plate is dealt at the start time. */
+    public function hasStarted(): bool
+    {
+        return $this->plate_dealt_at === null || ! $this->plate_dealt_at->isFuture();
     }
 
     public function hasCorrectWord(string $key): bool

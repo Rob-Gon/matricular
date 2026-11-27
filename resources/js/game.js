@@ -25,13 +25,23 @@ export default (config) => ({
     skipKey: SKIP_KEY,
     skipKeyLabel: IS_APPLE ? '⌘' : 'Ctrl',
     skipKeyAlone: false,
+    // Multiplayer: no answers until the traffic light turns green.
+    waiting: config.startsInMs > 0,
 
     init() {
         this.$store.sound.preload();
 
+        if (this.waiting) {
+            setTimeout(() => {
+                this.waiting = false;
+                this.$nextTick(() => this.$refs.word?.focus());
+            }, config.startsInMs);
+        }
+
         if (this.remaining !== null) {
             // Count against a deadline, not ticks: background tabs throttle timers.
-            this.deadline = Date.now() + this.remaining * 1000;
+            // A race's clock starts at the green light.
+            this.deadline = Date.now() + config.startsInMs + this.remaining * 1000;
             this.timer = setInterval(() => this.tick(), 250);
         }
     },
@@ -42,7 +52,7 @@ export default (config) => ({
 
     tick() {
         const before = this.remaining;
-        this.remaining = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000));
+        this.remaining = Math.min(config.total ?? Infinity, Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000)));
 
         // The fuel gauge ticks through the last ten seconds.
         if (this.remaining !== before && this.remaining > 0 && this.remaining <= 10) {
@@ -101,7 +111,7 @@ export default (config) => ({
     },
 
     async send(url, body, action) {
-        if (this.busy || this.over) {
+        if (this.busy || this.over || this.waiting) {
             return false;
         }
 

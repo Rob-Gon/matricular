@@ -120,6 +120,30 @@ export default () => ({
         }
     },
 
+    // Traffic-light beep, synthesised like the engine: short for each red lamp, long and high for green.
+    beep(go = false) {
+        const ctx = Howler.ctx;
+        if (!this.effects || !ctx || ctx.state !== 'running' || this.volume <= 0) {
+            return;
+        }
+
+        const now = ctx.currentTime;
+        const length = go ? 0.7 : 0.25;
+        const out = ctx.createGain();
+        out.gain.setValueAtTime(0.0001, now);
+        out.gain.exponentialRampToValueAtTime(0.3 * this.volume, now + 0.02);
+        out.gain.setValueAtTime(0.3 * this.volume, now + length - 0.08);
+        out.gain.exponentialRampToValueAtTime(0.0001, now + length);
+        out.connect(ctx.destination);
+
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = go ? 880 : 440;
+        osc.connect(out);
+        osc.start(now);
+        osc.stop(now + length);
+    },
+
     startMusic() {
         if (!this.music || playlist.length === 0 || track?.playing()) {
             return;

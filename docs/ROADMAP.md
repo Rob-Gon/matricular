@@ -144,7 +144,11 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] Grid animation: FLIP from the old layout to the new one (cars drive up into their bay, the ones behind a freed bay move forward) with a synthesised engine "vroom" (Web Audio, no sound file yet)
 - Redis is not needed yet: one Reverb server, locks on the database
 ### PR 2 · `feat/parallel-race`
-- [ ] Synced start (traffic light), seeded plate sequence, live scoreboard, results and podium, `tie_resolution`, "Revancha"
+- [x] Host starts once everyone is ready (2+ players); traffic-light start synced on the server's start time; seeded plate sequence shared by every run (`lobby_matches.plates`, `runs.plate_number`); live scoreboard over the lobby channel (`race.scored`); results with podium, standings and the best of the race; "Revancha" back to the grid with the same players and rules; races whose clock ran out are closed by the scheduler
+- [x] Multiplayer runs are `runs` rows with `lobby_match_id`; the `solo` global scope keeps them out of solo routes, rankings, stats and achievements
+- [x] Equal final scores share the position
+### PR 2b · `feat/race-tiebreak`
+- [ ] `tie_resolution = tiebreak`: tied podium players play one extra plate, first valid word wins (today ties always share the position)
 ### PR 3 · `feat/shared-rounds`
 - [ ] Rounds (1–30) of up to 5 min, words already used by others in the round score 0
 ### PR 4 · `feat/first-wins`

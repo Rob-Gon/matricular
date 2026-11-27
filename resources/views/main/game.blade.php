@@ -1,14 +1,18 @@
 @php
     use App\Models\Run;
 
+    // Multiplayer race: same screen, the player's run of the match, plus the live scoreboard and the traffic light.
+    $race ??= null;
     $digits = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
     $config = [
         'plate' => $run->plate,
         'digits' => $digits,
         'score' => $run->score,
         'remaining' => $countdownRemaining,
+        'total' => $countdownTotal,
+        'startsInMs' => $race['startsInMs'] ?? 0,
         'csrf' => csrf_token(),
-        'urls' => [
+        'urls' => $race['urls'] ?? [
             'word' => route('game.check-word', $run),
             'plate' => route('game.change-plate', $run),
             'end' => route('game.end', $run),
@@ -18,7 +22,11 @@
 @endphp
 
 {{-- No site header: the game fills the screen, so the word box and its buttons fit on desktop. --}}
-<x-layouts.app title="Partida" description="Partida en curso de Matricular." noindex :header="false">
+<x-layouts.app :title="$race ? 'Carrera' : 'Partida'" description="Partida en curso de Matricular." noindex :header="false">
+    @if ($race)
+        <div x-data="race(@js($race))" class="contents">
+        @include('main.partials.race-lights')
+    @endif
     <div
         x-data="game(@js($config))"
         @keydown.window="onKeydown($event)"
@@ -26,7 +34,7 @@
         @pointerdown.window="onPointerdown()"
         class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-dvh xl:gap-5 xl:pb-6"
     >
-        <h1 class="sr-only">Partida</h1>
+        <h1 class="sr-only">{{ $race ? 'Carrera' : 'Partida' }}</h1>
 
         {{-- Desktop only: the car drives on a road to the horizon. Smaller screens keep the flat road band. --}}
         <x-road-scene class="absolute inset-0 -z-10 hidden size-full xl:block" />
@@ -36,6 +44,9 @@
                 <x-odometer :value="$run->score" model="score" scale="0.9" class="max-sm:[--odometer-scale:0.62]!" />
             </div>
             <ul aria-label="Ajustes de esta partida" class="order-last flex w-full flex-wrap justify-center gap-2 sm:order-none sm:w-auto sm:gap-2.5">
+                @if ($race)
+                    <li class="rounded-full border-[3px] border-ink bg-mustard px-3 py-1 text-base font-black text-ink sm:px-4 sm:py-2 sm:text-xl" x-text="progress"></li>
+                @endif
                 @foreach ($run->settingsLabels() as $setting)
                     <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 xl:bg-enamel text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
                 @endforeach
@@ -48,6 +59,10 @@
         </div>
 
         <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6 xl:mt-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_min(600px,calc(100dvh-330px))_minmax(0,1fr)] xl:gap-6">
+            @if ($race)
+                @include('main.partials.race-standings')
+            @endif
+
             {{-- The road is drawn behind the car, so the feedback card can wrap below it on small screens. --}}
             <div class="relative w-full max-w-[600px] xl:col-start-2">
                 <div class="road absolute bottom-[5%] left-1/2 h-[16.5%]! w-[200vw] -translate-x-1/2 xl:hidden" aria-hidden="true"></div>
@@ -93,16 +108,16 @@
                         spellcheck="false"
                         placeholder="Escribe aquí"
                         autofocus
-                        :disabled="over"
+                        :disabled="over || waiting"
                         @paste.prevent
                     >
                 </div>
-                <button type="submit" class="btn btn-primary flex-[1_1_180px] text-2xl" aria-keyshortcuts="Enter" :disabled="busy || over">
+                <button type="submit" class="btn btn-primary flex-[1_1_180px] text-2xl" aria-keyshortcuts="Enter" :disabled="busy || over || waiting">
                     Comprobar <span class="kbd max-sm:hidden" aria-hidden="true">Intro</span>
                 </button>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over">
+                <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over || waiting">
                     Pasamatrícula (−{{ Run::POINTS_PENALTY }}) <span class="kbd max-sm:hidden" aria-hidden="true" x-text="skipKeyLabel">Ctrl</span>
                 </button>
                 @if (! $countdownTotal)
@@ -146,4 +161,7 @@
             </template>
         </div>
     </div>
+    @if ($race)
+        </div>
+    @endif
 </x-layouts.app>

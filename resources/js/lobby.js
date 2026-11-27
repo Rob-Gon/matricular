@@ -3,6 +3,7 @@
 // the new one (FLIP): new cars drive up into their bay, the cars behind a freed bay move forward.
 
 const MOVE_MS = 1000;
+const MIN_PLAYERS = 2;
 const ENTER_MS = 1700;
 
 export default (config) => ({
@@ -48,6 +49,27 @@ export default (config) => ({
         return this.state.players.filter((player) => !player.ready).map((player) => player.name);
     },
 
+    // The server checks the same conditions; this only enables the button and explains why it waits.
+    get canStart() {
+        return this.state.format === 'race' && this.state.players.length >= MIN_PLAYERS && this.waitingFor.length === 0;
+    },
+
+    get startHint() {
+        if (this.state.format !== 'race') {
+            return 'Por ahora solo se puede jugar la Carrera: «Rondas» y «El primero gana» llegan pronto.';
+        }
+
+        if (this.state.players.length < MIN_PLAYERS) {
+            return 'Comparte el código: hace falta al menos otro jugador.';
+        }
+
+        if (this.waitingFor.length) {
+            return `Falta que estén listos: ${this.waitingFor.join(', ')}.`;
+        }
+
+        return this.isHost ? '¡Todos listos! Da la salida cuando quieras.' : '¡Todos listos! El anfitrión da la salida.';
+    },
+
     status(player) {
         if (player.id === this.state.hostId) {
             return '👑 Anfitrión';
@@ -68,6 +90,11 @@ export default (config) => ({
 
         if (!next.players.some((player) => player.id === this.me)) {
             window.location.assign(`${config.urls.index}?expulsado=1`);
+            return;
+        }
+
+        if (next.status === 'playing') {
+            window.location.assign(config.urls.race);
             return;
         }
 
@@ -141,6 +168,10 @@ export default (config) => ({
 
         await this.apply(data);
         return true;
+    },
+
+    start() {
+        this.send('POST', config.urls.start, {});
     },
 
     toggleReady() {
