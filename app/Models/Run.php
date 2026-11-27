@@ -259,6 +259,24 @@ class Run extends Model
         return $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'reason' => RunWord::REASON_REPEATED, 'points' => 0]);
     }
 
+    /** "Rounds": a valid word another player already scored this round. Kept for the stats, scores nothing. */
+    public function addTakenWord(string $key, string $input, ?string $form): RunWord
+    {
+        return $this->record(['kind' => RunWord::KIND_WORD, 'input' => $input, 'key' => $key, 'form' => $form, 'reason' => RunWord::REASON_TAKEN, 'points' => 0]);
+    }
+
+    /** "Rounds": move the run onto the plate of the given round, timed from the round's start. */
+    public function joinRound(LobbyMatch $match, int $round): void
+    {
+        if ($this->plate_number === $round) {
+            return;
+        }
+
+        $this->plate = $match->plateAt($round);
+        $this->plate_number = $round;
+        $this->plate_dealt_at = $match->roundStartsAt($round);
+    }
+
     public function skipPlate(string $newPlate): void
     {
         $this->score -= self::POINTS_PENALTY;

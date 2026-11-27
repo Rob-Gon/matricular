@@ -96,11 +96,65 @@ class RaceTest extends TestCase
         app(LobbyManager::class)->setReady($lobby, $guest, false);
         $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable();
 
-        app(LobbyManager::class)->setRules($lobby, LobbyFormats::ROUNDS, LobbyFormats::ROUNDS->defaults());
+        // "First wins" is not playable yet.
+        app(LobbyManager::class)->setRules($lobby, LobbyFormats::FIRST, LobbyFormats::FIRST->defaults());
         app(LobbyManager::class)->setReady($lobby, $guest, true);
         $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable();
 
         $this->assertDatabaseCount('lobby_matches', 0);
+    }
+
+    public function test_the_first_plate_is_only_handed_out_at_the_green_light(): void
+    {
+        [$lobby, $host] = $this->readyLobby();
+        $this->actingAs($host)->postJson(route('lobbies.start', $lobby));
+        $match = LobbyMatch::firstOrFail();
+        $match->update(['plates' => ['BRC', 'MSL', 'TRN']]);
+        $match->runs()->update(['plate' => 'BRC']);
+
+        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertOk()->assertDontSee('BRC');
+        $this->actingAs($host)->postJson(route('lobbies.race.sync', $lobby))->assertStatus(409)->assertJsonMissingPath('chars');
+
+        $this->travel(LobbyMatch::LIGHTS_SECONDS + 2)->seconds();
+        $this->actingAs($host)->postJson(route('lobbies.race.sync', $lobby))->assertOk()->assertJsonPath('chars', ['B', 'R', 'C']);
+        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertSee('BRC');
+    }
+
+    public function test_rounds_share_one_plate_and_a_word_scores_only_for_whoever_said_it_first(): void
+    {
+        [$lobby, $host, [$guest]] = $this->readyLobby();
+        app(LobbyManager::class)->setRules($lobby, LobbyFormats::ROUNDS, [...LobbyFormats::ROUNDS->defaults(), 'rounds' => 3, 'round_seconds' => 20]);
+        app(LobbyManager::class)->setReady($lobby, $guest, true);
+        $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertOk();
+
+        $match = LobbyMatch::firstOrFail();
+        $this->assertCount(3, array_unique($match->plates));
+        $this->assertEquals(60, $match->starts_at->diffInSeconds($match->ends_at));
+        $match->update(['plates' => ['BRC', 'MSL', 'TRN']]);
+        $match->runs()->update(['plate' => 'BRC']);
+        $this->travel(LobbyMatch::LIGHTS_SECONDS + 2)->seconds();
+
+        // Round 1: the plate stays after a valid word; the same word scores only once.
+        $this->actingAs($host)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barco', 'round' => 0])
+            ->assertJsonPath('success', true)->assertJsonPath('score', 10)->assertJsonPath('chars', ['B', 'R', 'C']);
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'Barco', 'round' => 0])
+            ->assertJsonPath('success', false)->assertJsonPath('score', 0)
+            ->assertJsonPath('message', fn (string $message) => str_contains($message, 'ya la dijo '.$host->name));
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'cabra', 'round' => 0])->assertJsonPath('score', 10);
+        $this->actingAs($guest)->postJson(route('lobbies.race.plate', $lobby))->assertUnprocessable()->assertJsonPath('score', 10);
+
+        // Round 2: a new plate for everyone; a word sent just before the change still answers round 1.
+        $this->travel(20)->seconds();
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barca', 'round' => 0])
+            ->assertJsonPath('success', true)->assertJsonPath('round', 0);
+        $this->actingAs($guest)->postJson(route('lobbies.race.sync', $lobby))->assertJsonPath('chars', ['M', 'S', 'L'])->assertJsonPath('round', 1);
+
+        $this->travel(Run::LATENCY_GRACE_SECONDS + 1)->seconds();
+        $this->actingAs($host)->postJson(route('lobbies.race.word', $lobby), ['word' => 'cobre', 'round' => 0])
+            ->assertJsonPath('success', false)->assertJsonPath('score', 10);
+
+        Event::assertDispatched(RaceScored::class, fn (RaceScored $event) => $event->userId === $guest->id && $event->score === 20);
+        $this->assertSame(1, $match->runs()->where('user_id', $guest->id)->firstOrFail()->runWords()->where('reason', 'taken')->count());
     }
 
     public function test_words_wait_for_the_green_light_then_follow_the_shared_sequence(): void
@@ -243,7 +297,7 @@ class RaceTest extends TestCase
         Event::assertDispatched(TiebreakUpdated::class);
         $tiebreak->update(['plate' => 'BRC']);
 
-        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertSee('juegan una matrícula de desempate');
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertSee('juegan una matrícula de desempate')->assertDontSee('BRC');
         $this->actingAs($host)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'barco'])->assertForbidden();
         $this->actingAs($first)->postJson(route('lobbies.tiebreak', $lobby), ['word' => 'barco'])->assertJsonPath('success', false);
 

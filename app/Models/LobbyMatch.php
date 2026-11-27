@@ -76,6 +76,70 @@ class LobbyMatch extends Model
         return $this->hasMany(MatchTiebreak::class)->orderBy('id');
     }
 
+    public function isRounds(): bool
+    {
+        return $this->format === LobbyFormats::ROUNDS;
+    }
+
+    public function roundCount(): int
+    {
+        return (int) ($this->settings['rounds'] ?? 1);
+    }
+
+    public function roundSeconds(): int
+    {
+        return (int) ($this->settings['round_seconds'] ?? 0);
+    }
+
+    /** The round being played now (0-based); rounds follow each other without a break. */
+    public function currentRound(): int
+    {
+        $elapsed = max(0, (int) $this->starts_at->diffInMilliseconds(now()));
+
+        return min($this->roundCount() - 1, intdiv($elapsed, max(1, $this->roundSeconds()) * 1000));
+    }
+
+    public function roundStartsAt(int $round): Carbon
+    {
+        return $this->starts_at->copy()->addSeconds($round * $this->roundSeconds());
+    }
+
+    /**
+     * Who already scored this word on this plate in the match ("rounds": each plate is one round).
+     */
+    public function wordTakenBy(string $plate, string $key, int $exceptRunId): ?string
+    {
+        $run = $this->runs()
+            ->whereKeyNot($exceptRunId)
+            ->whereHas('runWords', fn ($query) => $query->where('plate', $plate)->where('key', $key)->where('valid', true))
+            ->with('user:id,name')
+            ->first();
+
+        return $run?->user->name;
+    }
+
+    /**
+     * The match rules as short labels, like a solo run's settings.
+     *
+     * @return list<string>
+     */
+    public function labels(): array
+    {
+        $s = $this->settings;
+
+        return [
+            match ($this->format) {
+                LobbyFormats::RACE => $s['countdown_time'] === 'Personalizado'
+                    ? 'Carrera de '.intdiv((int) $s['countdown_seconds'], 60).' min'
+                    : 'Carrera, '.$s['countdown_time'],
+                LobbyFormats::ROUNDS => $this->roundCount().' '.($this->roundCount() === 1 ? 'ronda' : 'rondas').' de '.$this->roundSeconds().' s',
+                LobbyFormats::FIRST => $s['plates'].' matrículas',
+            },
+            ($s['letter_set'] ?? 'simple') === 'simple' ? 'Letras simples' : 'Todas las letras',
+            ($s['ordered'] ?? false) ? 'En orden' : 'Cualquier orden',
+        ];
+    }
+
     public function activeTiebreak(): ?MatchTiebreak
     {
         return $this->tiebreaks()->whereNull('resolved_at')->first();

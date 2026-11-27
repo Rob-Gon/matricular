@@ -24,9 +24,9 @@ class RaceReport
         $names = collect($standings)->pluck('name', 'id');
         $runs = $match->runs()->pluck('user_id', 'id');
 
-        // Repeated words neither score nor count against accuracy, as in solo.
+        // Repeated words (and, in rounds, words someone else said first) neither score nor count against accuracy.
         $words = RunWord::whereIn('run_id', $runs->keys())->words()
-            ->where(fn ($query) => $query->whereNull('reason')->orWhere('reason', '!=', RunWord::REASON_REPEATED))
+            ->where(fn ($query) => $query->whereNull('reason')->orWhereNotIn('reason', RunWord::NEUTRAL_REASONS))
             ->get(['run_id', 'input', 'form', 'valid', 'elapsed_ms']);
         $valid = $words->where('valid', true);
         $playerOf = fn (RunWord $word): string => (string) $names[$runs[$word->run_id]];

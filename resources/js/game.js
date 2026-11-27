@@ -27,21 +27,28 @@ export default (config) => ({
     skipKeyAlone: false,
     // Multiplayer: no answers until the traffic light turns green.
     waiting: config.startsInMs > 0,
+    // Multiplayer "rounds": the same plate for everyone, a new one each round.
+    round: config.rounds?.current ?? 0,
+    rounds: config.rounds?.count ?? 0,
 
     init() {
         this.$store.sound.preload();
 
         if (this.waiting) {
+            // The first plate is not in the page: the server hands it out at the green light.
             setTimeout(() => {
                 this.waiting = false;
+                this.syncPlate(0);
                 this.$nextTick(() => this.$refs.word?.focus());
             }, config.startsInMs);
         }
 
         if (this.remaining !== null) {
             // Count against a deadline, not ticks: background tabs throttle timers.
-            // A race's clock starts at the green light.
-            this.deadline = Date.now() + config.startsInMs + this.remaining * 1000;
+            // A race's clock starts at the green light; in rounds the clock is the round's.
+            this.deadline = this.rounds
+                ? Date.now() + config.rounds.endsInMs
+                : Date.now() + config.startsInMs + this.remaining * 1000;
             this.timer = setInterval(() => this.tick(), 250);
         }
     },
@@ -60,7 +67,40 @@ export default (config) => ({
         }
 
         if (this.remaining === 0) {
-            this.end();
+            this.rounds && this.round < this.rounds - 1 ? this.nextRound() : this.end();
+        }
+    },
+
+    nextRound() {
+        this.round++;
+        this.deadline += config.rounds.seconds * 1000;
+        this.remaining = config.total;
+        this.feedback = null;
+        this.syncPlate(this.round);
+    },
+
+    // Asks the server for the plate to play now; retried briefly if this clock is a little ahead of it.
+    async syncPlate(expectedRound, attempt = 0) {
+        try {
+            const response = await fetch(config.urls.sync, {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': config.csrf },
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && (data.round ?? expectedRound) >= expectedRound) {
+                this.score = data.score;
+                this.newPlate(data.chars.join(''));
+                return;
+            }
+        } catch {
+            // Retried below.
+        }
+
+        if (attempt < 10 && !this.over) {
+            setTimeout(() => this.syncPlate(expectedRound, attempt + 1), 300);
+        } else {
+            this.feedback = { kind: 'warn', text: 'No llega la matrícula nueva. Recarga la página.' };
         }
     },
 
@@ -72,12 +112,16 @@ export default (config) => ({
             return;
         }
 
-        if (await this.send(config.urls.word, { word }, 'word')) {
+        if (await this.send(config.urls.word, { word, round: this.round }, 'word')) {
             this.word = '';
         }
     },
 
     skip() {
+        if (!config.canSkip) {
+            return;
+        }
+
         this.send(config.urls.plate, {}, 'skip');
     },
 
@@ -163,7 +207,10 @@ export default (config) => ({
         this.feedback = { kind: data.success ? 'ok' : lostPoints ? 'fail' : 'warn', text: data.message };
         this.score = data.score;
 
-        this.newPlate(data.chars.join(''));
+        // A late answer to the previous round must not bring its plate back.
+        if (!this.rounds || data.round === this.round) {
+            this.newPlate(data.chars.join(''));
+        }
         (data.achievements ?? []).forEach((achievement) => this.notify(achievement));
     },
 

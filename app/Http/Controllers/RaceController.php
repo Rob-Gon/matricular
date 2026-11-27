@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -44,21 +45,43 @@ class RaceController extends Controller
             return redirect()->route('lobbies.results', $lobby);
         }
 
-        $total = (int) $run->countdown_seconds;
+        $started = ! $match->starts_at->isFuture();
+        $round = $started ? $match->currentRound() : 0;
+
+        if ($match->isRounds() && $started) {
+            $this->joinRound($run, $match, $round);
+        }
+
+        $roundEndsInMs = max(0, (int) now()->diffInMilliseconds($match->roundStartsAt($round + 1), false));
+        $total = $match->isRounds() ? $match->roundSeconds() : (int) $run->countdown_seconds;
 
         return view('main.game', [
             'run' => $run,
             'countdownTotal' => $total,
             // During the traffic light the clock shows the full time.
-            'countdownRemaining' => min($total, (int) $run->remainingSeconds()),
+            'countdownRemaining' => $match->isRounds()
+                ? min($total, (int) ceil($roundEndsInMs / 1000))
+                : min($total, (int) $run->remainingSeconds()),
             'race' => [
                 'lobbyId' => $lobby->id,
                 'me' => $request->user()->id,
                 'startsInMs' => max(0, (int) now()->diffInMilliseconds($match->starts_at, false)),
+                // The first plate is only sent once the light is green (then fetched from "sync").
+                'plate' => $started ? $run->plate : '',
+                'title' => $match->format->shortLabel(),
+                'labels' => $match->labels(),
+                'canSkip' => ! $match->isRounds(),
+                'rounds' => $match->isRounds() ? [
+                    'count' => $match->roundCount(),
+                    'seconds' => $match->roundSeconds(),
+                    'current' => $round,
+                    'endsInMs' => $roundEndsInMs,
+                ] : null,
                 'standings' => $match->standings(),
                 'urls' => [
                     'word' => route('lobbies.race.word', $lobby),
                     'plate' => route('lobbies.race.plate', $lobby),
+                    'sync' => route('lobbies.race.sync', $lobby),
                     'end' => route('lobbies.race.end', $lobby),
                     'summary' => route('lobbies.results', $lobby),
                     'lobby' => route('lobbies.index'),
@@ -67,12 +90,44 @@ class RaceController extends Controller
         ]);
     }
 
+    /** The plate to play now: the first one at the green light, or the new round's. Never before its time. */
+    public function sync(Request $request, Lobby $lobby): JsonResponse
+    {
+        $run = $this->runOrFail($request, $lobby);
+        $match = $run->lobbyMatch;
+
+        if ($match === null || $match->starts_at->isFuture()) {
+            return response()->json(['success' => false, 'message' => 'Espera al semáforo verde.'], 409);
+        }
+
+        if ($match->isRounds()) {
+            $this->joinRound($run, $match, $match->currentRound());
+        }
+
+        return $this->response($run, ['success' => true, 'message' => '']);
+    }
+
     public function word(SubmitWordRequest $request, Lobby $lobby, SubmitWord $submitWord): JsonResponse
     {
         $run = $this->runOrFail($request, $lobby);
+        $match = $run->lobbyMatch;
         $before = $run->score;
 
-        $result = $submitWord->handle($run, $request->validated('word'));
+        $result = DB::transaction(function () use ($request, $run, $match, $submitWord): array {
+            if ($match?->isRounds()) {
+                // One word at a time per match, so "already said in this round" is decided in order.
+                LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
+                $round = $this->answeredRound($match, $request->integer('round', $match->currentRound()));
+
+                if ($round === null) {
+                    return ['success' => false, 'message' => 'Esa ronda ya ha terminado. Prueba con la matrícula nueva.'];
+                }
+
+                $this->joinRound($run, $match, $round);
+            }
+
+            return $submitWord->handle($run, $request->validated('word'));
+        });
         Arr::forget($result, 'attempt'); // multiplayer runs unlock no achievements
 
         if ($run->score !== $before) {
@@ -86,6 +141,10 @@ class RaceController extends Controller
     {
         $run = $this->runOrFail($request, $lobby);
         $before = $run->score;
+
+        if ($run->lobbyMatch?->isRounds()) {
+            return $this->response($run, ['success' => false, 'message' => 'En «Rondas» no hay Pasamatrícula.'], 422);
+        }
 
         $result = $run->withLock(function () use ($run, $plates): array {
             if ($run->isOver()) {
@@ -210,6 +269,34 @@ class RaceController extends Controller
      */
     private function response(Run $run, array $result, int $status = 200): JsonResponse
     {
-        return response()->json([...$result, 'chars' => $run->plateLetters(), 'score' => $run->score, 'achievements' => []], $status);
+        return response()->json([
+            ...$result,
+            'chars' => $run->plateLetters(),
+            'score' => $run->score,
+            'round' => $run->plate_number,
+            'achievements' => [],
+        ], $status);
+    }
+
+    /** "Rounds": put the run on the round's plate. */
+    private function joinRound(Run $run, LobbyMatch $match, int $round): void
+    {
+        $run->withLock(function () use ($run, $match, $round): void {
+            $run->joinRound($match, $round);
+            $run->save();
+        });
+    }
+
+    /**
+     * The round a word answers: the current one, or the previous one if the word left just before
+     * the plate changed (the same grace a race gives late words). Null when it is too late.
+     */
+    private function answeredRound(LobbyMatch $match, int $asked): ?int
+    {
+        $current = $match->currentRound();
+        $lateForPrevious = $asked === $current - 1
+            && now()->lessThanOrEqualTo($match->roundStartsAt($current)->addSeconds(Run::LATENCY_GRACE_SECONDS));
+
+        return $asked === $current || $lateForPrevious ? $asked : null;
     }
 }

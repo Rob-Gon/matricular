@@ -40,6 +40,12 @@ class RunWord extends Model
 
     public const REASON_TRAP = 'trap';
 
+    /** "Rounds": a valid word another player already scored on this round's plate. Scores 0. */
+    public const REASON_TAKEN = 'taken';
+
+    /** Reasons that neither score nor count against accuracy. */
+    public const NEUTRAL_REASONS = [self::REASON_REPEATED, self::REASON_TAKEN];
+
     public const UPDATED_AT = null;
 
     // Milliseconds matter: answer times now, "first wins" ordering in multiplayer later.
@@ -109,6 +115,7 @@ class RunWord extends Model
             self::REASON_NOT_IN_DICTIONARY => 'No está en el diccionario',
             self::REASON_REPEATED => 'Repetida: no suma ni resta',
             self::REASON_TRAP => 'Buen intento: esa no cuela',
+            self::REASON_TAKEN => 'Ya la dijo otro jugador en la ronda: no suma',
             default => 'No valió',
         };
     }

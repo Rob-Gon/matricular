@@ -54,12 +54,16 @@ export const raceResults = (config) => ({
             this.tiebreakCountdown = Math.max(1, Math.ceil((startAt - now) / 1000));
             this.tiebreakSeconds = Math.max(0, Math.ceil((endAt - Math.max(now, startAt)) / 1000));
 
+            // The plate is only sent once the tiebreak has started.
             if (!this.tiebreakOn && now >= startAt) {
-                this.tiebreakOn = true;
-                this.$store.sound.beep(true);
-                this.$nextTick(() => this.$refs.tiebreakWord?.focus());
+                clearInterval(this.tiebreakTimer);
+                window.location.reload();
             }
         };
+
+        if (this.tiebreakOn) {
+            this.$nextTick(() => this.$refs.tiebreakWord?.focus());
+        }
 
         step();
         this.tiebreakTimer = setInterval(step, 200);
