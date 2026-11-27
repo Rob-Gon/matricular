@@ -37,7 +37,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - `app/Models` – `User`, `Run`, `Achievement` (pivot table `user_achievements`).
 - `app/Achievements` + `config/achievements.php` – achievement conditions and catalogue; `AchievementUnlocker` evaluates them. After editing the catalogue run `php artisan db:seed --class=AchievementsSeeder`.
 - `resources/js/game.js` – solo game client (Alpine component `game`, registered in `site.js`); the server stays authoritative.
-- `resources/views/components` – design system as anonymous Blade components (`plate`, `car`, `odometer`, `fuel-gauge`, `sign`, `field`, `option`, `flash`). Pages on the new design use `<x-layouts.app>`; `layouts/master-layout` is legacy and goes away in F3.
+- `resources/views/components` – design system as anonymous Blade components (`plate`, `car`, `odometer`, `fuel-gauge`, `road-scene`, `sign`, `field`, `option`, `flash`). Pages on the new design use `<x-layouts.app>`; `layouts/master-layout` is legacy and goes away in F3.
 - `resources/css/app.css` – Tailwind 4 theme tokens and component classes (`btn`, `paper`, `title-ink`, `field-*`, `opt`, `chip`, `plate`, `car`, `odometer`).
 - Target layout for new code: `app/Actions` or `app/Services` for game logic (word validation, plate generation, scoring), Form Requests for input, Policies for ownership, Events for achievements/broadcasts.
 

@@ -88,6 +88,7 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 - [x] Keyboard shortcuts: Enter submits the word (native form submit); Control (Command on Mac) pressed and released alone triggers "Pasamatrícula" (owner's choice, replaced Shift; shortcuts such as Ctrl+Z do not count). Keys shown on the buttons (hidden on small screens) and in the guide
 - [x] "Fin del trayecto" end screen (`/game/{run}/summary`, "no entry" sign) with the trip receipt: correct/failed words, skips, longest word, personal best and the run's achievements. Opening it closes a countdown that ran out with the tab closed, so its run achievements are no longer skipped
 - [x] "Sugerir «palabra»" stays hidden until the suggestions flow exists
+- [x] Desktop (≥1280 px): the car drives on a road in perspective (`x-road-scene`: sky, low sun, hills, road to the horizon) and the word form is a card standing on the road; smaller screens keep the flat road band (owner's choice from the canvas test)
 
 ### PR 4 · `feat/legacy-removal`
 - [ ] Menu, scores and achievements pages on the new layout (fixes the continuously animated menu buttons that Playwright cannot click)

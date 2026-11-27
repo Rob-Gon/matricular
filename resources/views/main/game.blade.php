@@ -23,17 +23,20 @@
         @keydown.window="onKeydown($event)"
         @keyup.window="onKeyup($event)"
         @mousedown.window="skipKeyAlone = false"
-        class="flex flex-col items-center gap-7 overflow-x-clip pb-14"
+        class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-[56rem] xl:pb-10"
     >
         <h1 class="sr-only">Partida</h1>
 
-        <div class="flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-2 sm:gap-5">
+        {{-- Desktop only: the car drives on a road to the horizon. Smaller screens keep the flat road band. --}}
+        <x-road-scene class="absolute inset-0 -z-10 hidden size-full xl:block" />
+
+        <div class="flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-2 sm:gap-5 xl:max-w-7xl xl:pt-5">
             <div class="paper px-4 py-3 sm:px-5 sm:py-3.5">
                 <x-odometer :value="$run->score" model="score" scale="0.9" class="max-sm:[--odometer-scale:0.62]!" />
             </div>
             <ul aria-label="Ajustes de esta partida" class="order-last flex w-full flex-wrap justify-center gap-2 sm:order-none sm:w-auto sm:gap-2.5">
                 @foreach ($run->settingsLabels() as $setting)
-                    <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
+                    <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 xl:bg-enamel text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
                 @endforeach
             </ul>
             @if ($countdownTotal)
@@ -43,10 +46,10 @@
             @endif
         </div>
 
-        <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6">
+        <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6 xl:mt-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_600px_minmax(0,1fr)] xl:gap-6">
             {{-- The road is drawn behind the car, so the feedback card can wrap below it on small screens. --}}
-            <div class="relative w-full max-w-[600px]">
-                <div class="road absolute bottom-[5%] left-1/2 h-[16.5%]! w-[200vw] -translate-x-1/2" aria-hidden="true"></div>
+            <div class="relative w-full max-w-[600px] xl:col-start-2">
+                <div class="road absolute bottom-[5%] left-1/2 h-[16.5%]! w-[200vw] -translate-x-1/2 xl:hidden" aria-hidden="true"></div>
                 <x-car
                     :letters="$run->plate"
                     :digits="$digits"
@@ -59,7 +62,7 @@
             </div>
 
             {{-- Results are announced politely so typing is never interrupted. --}}
-            <div aria-live="polite" class="min-h-0 w-full flex-[0_1_340px] sm:mb-28 sm:min-w-[260px]">
+            <div aria-live="polite" class="min-h-0 w-full flex-[0_1_340px] sm:mb-28 sm:min-w-[260px] xl:mb-36 xl:min-w-0">
                 <template x-if="feedback">
                     <div class="paper flex items-center gap-3.5 px-5 py-5">
                         <x-sign type="ok" class="size-14" x-show="feedback.kind === 'ok'" />
@@ -71,8 +74,9 @@
             </div>
         </div>
 
-        <form @submit.prevent="submit()" class="flex w-full max-w-[820px] flex-col gap-4 px-6">
-            <label for="word" class="font-display text-2xl text-mustard">Tu palabra</label>
+        {{-- On desktop the form is a card standing on the road. --}}
+        <form @submit.prevent="submit()" class="flex w-full max-w-[820px] flex-col gap-4 px-6 xl:max-w-[600px] xl:rounded-[1.6rem] xl:border-[5px] xl:border-ink xl:bg-enamel xl:py-6 xl:text-ink xl:shadow-hard-lg xl:[--focus:var(--color-plate)]">
+            <label for="word" class="font-display text-2xl text-mustard xl:text-ink">Tu palabra</label>
             <div class="flex flex-wrap items-stretch gap-4">
                 <div class="min-w-0 flex-[999_1_360px]">
                     <input
