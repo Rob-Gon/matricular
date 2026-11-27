@@ -138,9 +138,11 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 ## F6 – Multiplayer
 Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lobbies) and `.claude/rules/realtime.md`. Screens are mocked up on the design canvas first.
 
-- [ ] Canvas: lobby with the 16-slot starting grid and car colours, traffic-light start, live scoreboard per format, podium and results, reactions and horn
+- [x] Canvas: lobby with the 16-slot starting grid and car colours, traffic-light start, live scoreboard per format, podium and results, reactions and horn (approved; "¡Pita!" button, cars drive into their bay and move up when one frees)
 ### PR 1 · `feat/lobbies`
-- [ ] Reverb + Echo (local Redis from Laragon), lobbies and lobby players, create/join by code + optional password, presence channel, ready state, host transfer, kick, car colour, idle close after 30 min
+- [x] Reverb + Echo (Echo and pusher-js load only on the lobby page), lobbies and lobby players, create/join by plate-like code + optional hashed password (throttled), presence channel (players only, id and name), ready state, host transfer to the oldest player, kick, car colour, rules per format within the agreed limits, idle close after 30 min (`lobbies:close-idle`, every 5 min)
+- [x] Grid animation: FLIP from the old layout to the new one (cars drive up into their bay, the ones behind a freed bay move forward) with a synthesised engine "vroom" (Web Audio, no sound file yet)
+- Redis is not needed yet: one Reverb server, locks on the database
 ### PR 2 · `feat/parallel-race`
 - [ ] Synced start (traffic light), seeded plate sequence, live scoreboard, results and podium, `tie_resolution`, "Revancha"
 ### PR 3 · `feat/shared-rounds`
@@ -153,6 +155,7 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [ ] Multiplayer stats (wins, podiums), reconnection, Playwright E2E with several browser contexts
 
 ## F7 – Production
+- [ ] Reverb in production: Forge daemon `php artisan reverb:start`, Nginx proxy for the WebSocket host with TLS, REVERB_* and VITE_REVERB_* variables in Forge (`.env.example` lists them)
 - [x] Hosting decision: Forge + one VPS (Hetzner, EU), shared with other personal projects; move to a dedicated server if load requires it
 - [ ] Domain
 - [ ] Redis, Reverb daemon, queue worker, scheduler, SSL

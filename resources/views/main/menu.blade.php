@@ -45,6 +45,19 @@
                         </span>
                     </a>
                 </li>
+                <li class="md:col-span-2">
+                    <a href="{{ route('lobbies.index') }}" class="paper group flex h-full flex-col items-start gap-4 p-6 no-underline sm:flex-row sm:items-center sm:gap-6 sm:p-7 transition-transform hover:-translate-1 motion-reduce:transition-none">
+                        <svg aria-hidden="true" viewBox="0 0 120 80" class="w-24 shrink-0 sm:w-32">
+                            <rect x="4" y="10" width="34" height="60" rx="12" fill="#C8361F" stroke="#000000" stroke-width="5" />
+                            <rect x="43" y="10" width="34" height="60" rx="12" fill="#E9A92B" stroke="#000000" stroke-width="5" />
+                            <rect x="82" y="10" width="34" height="60" rx="12" fill="#1F3A97" stroke="#000000" stroke-width="5" />
+                        </svg>
+                        <span class="flex flex-col gap-1.5">
+                            <span class="font-display text-2xl sm:text-3xl">Jugar con amigos</span>
+                            <span class="text-xl">Crea una sala o entra con su código: de 2 a 16 jugadores en carrera, por rondas o a ver quién acierta antes.</span>
+                        </span>
+                    </a>
+                </li>
             </ul>
 
             <nav aria-label="Más" class="flex flex-wrap gap-4">

@@ -75,6 +75,43 @@ export default () => ({
         }
     },
 
+    // A short cartoon "vroom" synthesised with Web Audio, so it needs no sound file: a rough low
+    // sawtooth whose pitch revs up and settles, through a low-pass filter.
+    engine() {
+        const ctx = Howler.ctx;
+        if (!this.effects || !ctx) {
+            return;
+        }
+
+        // Browsers keep audio suspended until the first user gesture; until then the cars move silently.
+        if (ctx.state !== 'running') {
+            ctx.resume().catch(() => {});
+            return;
+        }
+
+        const now = ctx.currentTime;
+        const out = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 700;
+        out.gain.setValueAtTime(0.0001, now);
+        out.gain.exponentialRampToValueAtTime(0.35 * this.volume, now + 0.06);
+        out.gain.exponentialRampToValueAtTime(0.0001, now + 0.75);
+        filter.connect(out).connect(ctx.destination);
+
+        for (const [type, detune] of [['sawtooth', 0], ['square', 7]]) {
+            const osc = ctx.createOscillator();
+            osc.type = type;
+            osc.detune.value = detune * 100;
+            osc.frequency.setValueAtTime(48, now);
+            osc.frequency.exponentialRampToValueAtTime(130, now + 0.28);
+            osc.frequency.exponentialRampToValueAtTime(70, now + 0.7);
+            osc.connect(filter);
+            osc.start(now);
+            osc.stop(now + 0.78);
+        }
+    },
+
     startMusic() {
         if (!this.music || playlist.length === 0 || track?.playing()) {
             return;

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\LobbyController;
 use App\Http\Controllers\ScoreController;
 use App\Models\Run;
 use Illuminate\Http\Request;
@@ -73,4 +74,21 @@ Route::middleware('auth')->group(function () {
 
     // Logros
     Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.view');
+
+    // Multiplayer lobbies
+    Route::prefix('lobbies')->name('lobbies.')->controller(LobbyController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
+        // Throttled: the code and the optional password must not be guessable by brute force.
+        Route::post('/join', 'join')->middleware('throttle:10,1')->name('join');
+        Route::get('/{lobby}', 'show')->name('show');
+        Route::post('/{lobby}/leave', 'leave')->name('leave');
+
+        Route::middleware('throttle:game')->group(function () {
+            Route::post('/{lobby}/ready', 'ready')->name('ready');
+            Route::post('/{lobby}/color', 'color')->name('color');
+            Route::put('/{lobby}/rules', 'rules')->name('rules');
+            Route::post('/{lobby}/kick', 'kick')->name('kick');
+        });
+    });
 });
