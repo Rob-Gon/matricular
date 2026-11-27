@@ -1,6 +1,10 @@
 // Solo game client. The server decides plate, score, time and word validity; this only sends
 // actions and renders the answers.
 
+// Skip key: Command on Apple devices, Control elsewhere.
+const IS_APPLE = /Mac|iPhone|iPad/.test(navigator.userAgentData?.platform ?? navigator.platform);
+const SKIP_KEY = IS_APPLE ? 'Meta' : 'Control';
+
 const randomDigits = () => String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
 const FAILURES = {
@@ -18,7 +22,9 @@ export default (config) => ({
     over: false,
     feedback: null,
     toasts: [],
-    shiftAlone: false,
+    skipKey: SKIP_KEY,
+    skipKeyLabel: IS_APPLE ? '⌘' : 'Ctrl',
+    skipKeyAlone: false,
 
     init() {
         if (this.remaining !== null) {
@@ -57,21 +63,21 @@ export default (config) => ({
         this.send(config.urls.plate, {});
     },
 
-    // Shift pressed and released on its own skips the plate; Shift + a letter just types a capital.
+    // The skip key pressed and released on its own skips the plate; shortcuts such as Ctrl+Z do not.
     onKeydown(event) {
-        if (event.key !== 'Shift') {
-            this.shiftAlone = false;
+        if (event.key !== SKIP_KEY) {
+            this.skipKeyAlone = false;
         } else if (!event.repeat) {
-            this.shiftAlone = true;
+            this.skipKeyAlone = true;
         }
     },
 
     onKeyup(event) {
-        if (event.key !== 'Shift' || !this.shiftAlone) {
+        if (event.key !== SKIP_KEY || !this.skipKeyAlone) {
             return;
         }
 
-        this.shiftAlone = false;
+        this.skipKeyAlone = false;
 
         if (!this.$refs.confirmEnd?.open) {
             this.skip();
