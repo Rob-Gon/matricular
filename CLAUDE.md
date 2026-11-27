@@ -29,6 +29,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - test: `php artisan test`
 - lint: `vendor/bin/pint`
 - build: `npm run build`
+- dictionary: `php artisan dictionary:import` (downloads the pinned RLA-ES Hunspell files to `storage/app/dictionary/`, ~2 min)
 
 ## Architecture
 - `app/Http/Controllers` – thin controllers (currently fat; being refactored).
@@ -50,7 +51,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 
 ## External services & integrations
 - Word validation today: unofficial `https://rae-api.com/api/words/{word}` (being replaced by a local dictionary; may remain as fallback only).
-- Planned local dictionary sources: Spanish Wiktionary extracts (kaikki.org, CC BY-SA, attribution required on the site) and Hunspell es_ES (verify license before import).
+- Local dictionary: `words` table built from RLA-ES v2.9 es_ES (GPL/LGPL/MPL tri-license, pinned in `app/Dictionary/RlaEsSource.php`). Part of speech planned from Spanish Wiktionary via kaikki.org (CC BY-SA, attribution required on the site).
 - GitHub: https://github.com/Rob-Gon/matricular (public). Never commit secrets or real user data.
 
 ## Recommended Claude Code plugins
