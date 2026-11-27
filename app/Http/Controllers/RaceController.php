@@ -263,7 +263,8 @@ class RaceController extends Controller
     }
 
     /**
-     * Same shape as the solo game's answers, so the game screen works unchanged.
+     * Same shape as the solo game's answers, so the game screen works unchanged. Before the green
+     * light no answer carries the plate: it is only handed out from the start time on.
      *
      * @param  array<string, mixed>  $result
      */
@@ -271,7 +272,7 @@ class RaceController extends Controller
     {
         return response()->json([
             ...$result,
-            'chars' => $run->plateLetters(),
+            'chars' => $run->hasStarted() ? $run->plateLetters() : [],
             'score' => $run->score,
             'round' => $run->plate_number,
             'achievements' => [],

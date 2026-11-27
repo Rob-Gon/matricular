@@ -165,8 +165,11 @@ class RaceTest extends TestCase
         $match->update(['plates' => ['BRC', 'MSL', 'TRN']]);
         $match->runs()->update(['plate' => 'BRC']);
 
+        // Before the green light no answer gives the plate away.
         $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barco'])
-            ->assertOk()->assertJsonPath('success', false)->assertJsonPath('score', 0);
+            ->assertOk()->assertJsonPath('success', false)->assertJsonPath('score', 0)->assertJsonPath('chars', []);
+        $this->actingAs($guest)->postJson(route('lobbies.race.plate', $lobby))->assertJsonPath('chars', []);
+        $this->actingAs($guest)->postJson(route('lobbies.race.end', $lobby))->assertJsonPath('chars', []);
 
         $this->travel(LobbyMatch::LIGHTS_SECONDS + 2)->seconds();
 
