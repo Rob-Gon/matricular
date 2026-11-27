@@ -9,13 +9,15 @@ Update this file at the end of every task: tick what is done, add findings, move
 - [x] `git init` + remote `origin` (https://github.com/Rob-Gon/matricular)
 - [x] Initial commit and push
 - [x] Fix local PHP PATH so `php` is Laragon 8.3 (user action)
-- [ ] Install Claude Code plugins (user action, commands in the Obsidian note "Plugins Claude Code - Instalación")
+- [x] Install Claude Code plugins (user action, commands in the Obsidian note "Plugins Claude Code - Instalación")
 - [ ] Configure GitHub repository settings (user action, see `docs/github-setup.md`)
-- [ ] Larastan + Pint config, GitHub Actions CI (Pint, Larastan, tests, `npm run build`)
+- [x] Larastan (level 5 + baseline of 11 legacy errors) + Pint, GitHub Actions CI (Pint, Larastan, tests, `npm run build`)
+- [ ] Update vulnerable dependencies (`composer audit`: 62 advisories in 15 packages; `npm audit`: 3 critical, 9 high in dev deps), then add `composer audit` to CI
 - [x] Real README (install, run, test)
-- [ ] Wipe local test data (`migrate:fresh`, local only; start MySQL in Laragon first)
+- [x] Wipe local test data (`migrate:fresh`, local only)
 
 ## F1 – Fixes & hardening (each fix with a test)
+- [ ] Shrink `phpstan-baseline.neon` to zero as the fixes land
 - [ ] Run ownership: Policy so a user can only touch their own runs (`Run::find` without owner check today)
 - [ ] Plate generated and stored server-side; stop trusting `char1..3` from the client
 - [ ] Server-side timer: `started_at`/`ends_at` on runs, reject late words
