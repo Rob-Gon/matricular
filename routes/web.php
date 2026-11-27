@@ -11,6 +11,13 @@ Route::get('/', function () {
 })->name('home.view');
 
 Route::view('/creditos', 'app.credits')->name('credits.view');
+Route::view('/como-se-juega', 'app.guide')->name('guide.view');
+
+Route::get('/sitemap.xml', function () {
+    return response()
+        ->view('sitemap', ['routes' => ['home.view', 'guide.view', 'credits.view', 'register.view', 'login.view']])
+        ->header('Content-Type', 'application/xml');
+})->name('sitemap');
 
 // Rutas para usuarios no autenticados
 Route::middleware('guest')->group(function () {

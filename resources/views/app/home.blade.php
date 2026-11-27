@@ -1,101 +1,58 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    @if(session('error'))
-        <meta name="session-error" content="{{ session('error') }}">
-    @endif
-
-    <title>@yield('title', 'Matricular')</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-
-    @vite(['resources/sass/app.scss', 'resources/sass/main/_home.scss', 'resources/js/app.js'])
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
-</head>
-<body>
-    <div id="master">
-        <main class="py-5">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-md-8 text-center">
-                        <div class="greeting-section mb-5">
-                            <h1 class="display-4 mb-3">¡Buenas!</h1>
-                            <h1 class="display-3 mb-0">
-                                Bienvenido a <span class="game-title">MATRICULAR</span>
-                            </h1>
-                        </div>
-                        
-                        <div class="game-description-section mb-5">
-                            <div class="card shadow-sm">
-                                <div class="card-body">
-                                    <h2 class="h4 mb-3">¿Cómo jugar?</h2>
-                                    <p class="lead">
-                                        Busca palabras que cuadren con las matrículas de los coches que te ponemos delante y aumentar tu puntuación!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        @if(Auth::guest())
-                            <div class="navigation-section">
-                                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                    <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                                        Iniciar Sesión
-                                    </a>
-                                    <a href="{{ route('register') }}" class="btn btn-outline-secondary btn-lg px-4">
-                                        Registrarse
-                                    </a>
-                                </div>
-                            </div>
-                        @else
-                            <div class="navigation-section">
-                                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                    <a href="{{ route('menu.view') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                                        Menu Principal
-                                    </a>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+<x-layouts.app>
+    <div>
+        <section aria-labelledby="titulo" class="mx-auto flex max-w-6xl flex-col items-center px-6 pt-2 pb-24 text-center">
+            <div class="relative flex aspect-[820/500] w-full max-w-[820px] items-end justify-center overflow-hidden rounded-[50%] border-8 border-ink bg-celluloid shadow-hard-lg">
+                <svg class="absolute inset-0 size-full" viewBox="0 0 820 500" preserveAspectRatio="none" aria-hidden="true">
+                    <rect x="0" y="210" width="820" height="290" fill="#CDB98A" />
+                    <path d="M0 210 H820" stroke="#000000" stroke-width="5" />
+                    <path d="M360 210 L460 210 L780 500 L40 500 Z" fill="#3A3A36" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+                </svg>
+                <x-car letters="MTR" digits="2026" drop class="relative mb-[4%] w-[73%]" />
             </div>
-        </main>
-        <footer class="footer py-3 bg-light">
-            <div class="container text-center">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <span class="text-muted">© {{ date('Y') }} Matricular. Todos los derechos reservados.</span>
-                        <a href="{{ route('credits.view') }}" class="ms-2">Créditos</a>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="social-links">
-                            <a href="https://github.com/Rob-Gon" target="_blank" class="social-link" title="GitHub">
-                                <i class="fab fa-github"></i>
-                            </a>
-                            <a href="https://www.linkedin.com/in/roberto-gonzalez-web-dev/" target="_blank" class="social-link" title="LinkedIn">
-                                <i class="fab fa-linkedin"></i>
-                            </a>
-                            <a href="https://www.instagram.com/robertognzlz_/" target="_blank" class="social-link" title="Instagram">
-                                <i class="fab fa-instagram"></i>
-                            </a>
-                            <a href="mailto:robertobbgg@gmail.com" class="social-link" title="Email">
-                                <i class="fas fa-envelope"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+
+            <h1 id="titulo" class="title-ink relative -mt-10 text-[clamp(2.5rem,12vw,9.25rem)] md:-mt-14">Matricular</h1>
+            <p class="mt-5 max-w-2xl text-[clamp(1.5rem,3vw,2.125rem)] font-bold leading-tight">
+                Tres letras de matrícula. Tú pones la palabra antes de que se acabe la gasolina.
+            </p>
+
+            <div class="mt-9 flex flex-wrap items-center justify-center gap-7">
+                @auth
+                    <a class="btn btn-primary px-7 text-xl md:px-10 md:text-2xl" href="{{ route('menu.view') }}">Jugar</a>
+                @else
+                    <a class="btn btn-primary px-7 text-xl md:px-10 md:text-2xl" href="{{ route('register.view') }}">Crear cuenta y jugar</a>
+                    <a class="text-xl font-bold hover:text-mustard" href="{{ route('login.view') }}">Ya tengo cuenta</a>
+                @endauth
             </div>
-        </footer>
+        </section>
     </div>
-</body>
-</html>
+
+    <section id="como" aria-labelledby="como-titulo" class="surface-light border-t-8 border-ink bg-celluloid px-6 pt-18 pb-22">
+        <div class="mx-auto flex max-w-6xl flex-col gap-10">
+            <h2 id="como-titulo" class="font-display text-[clamp(2.25rem,5vw,3.5rem)] leading-none">Cómo se juega</h2>
+            <ol class="grid gap-9 [grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))]">
+                <li class="paper flex -rotate-1 flex-col gap-5 p-7">
+                    <span class="flex size-14 items-center justify-center rounded-full border-4 border-ink bg-mustard font-display text-2xl" aria-hidden="true">1</span>
+                    <div class="flex h-30 items-center">
+                        <x-plate letters="BRC" digits="1932" scale="0.58" />
+                    </div>
+                    <p class="text-2xl">Mira las tres letras de la matrícula.</p>
+                </li>
+                <li class="paper flex rotate-[0.8deg] flex-col gap-5 p-7">
+                    <span class="flex size-14 items-center justify-center rounded-full border-4 border-ink bg-mustard font-display text-2xl" aria-hidden="true">2</span>
+                    <div class="flex h-30 items-center">
+                        <span class="text-7xl font-black tracking-wide"><span class="text-signal">b</span>a<span class="text-signal">rc</span>o</span>
+                    </div>
+                    <p class="text-2xl">Escribe una palabra que las tenga todas. Mayúsculas y tildes dan igual; la ñ cuenta como letra propia.</p>
+                </li>
+                <li class="paper flex -rotate-[0.6deg] flex-col gap-5 p-7">
+                    <span class="flex size-14 items-center justify-center rounded-full border-4 border-ink bg-mustard font-display text-2xl" aria-hidden="true">3</span>
+                    <div class="flex h-30 items-center">
+                        <x-odometer :value="10" />
+                    </div>
+                    <p class="text-2xl">Si existe, sumas 10 puntos y llega otra matrícula. Si no, pierdes 5.</p>
+                </li>
+            </ol>
+            <a class="self-start text-xl font-bold underline hover:text-plate" href="{{ route('guide.view') }}">Leer la guía completa</a>
+        </div>
+    </section>
+</x-layouts.app>

@@ -126,6 +126,18 @@ class AuthTest extends TestCase
         $this->assertModelExists($user);
     }
 
+    public function test_a_wrong_password_reopens_the_delete_dialog_on_the_profile_page(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->from(route('profile.view'))
+            ->delete(route('profile.delete'), ['password' => 'wrong'])
+            ->assertRedirect(route('profile.view'))
+            ->assertSessionHasErrors(['password'], errorBag: 'deleteAccount');
+
+        $this->assertModelExists($user);
+    }
+
     public function test_deleting_the_account_logs_out_and_removes_its_data(): void
     {
         $run = Run::factory()->create();

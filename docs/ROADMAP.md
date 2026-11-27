@@ -67,13 +67,34 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
   - 1,420 plates (17.7%) had no solution at all and could be dealt before; eligible now: 2,685 easy, 5,634 medium, 4,203 hard
 
 ## F3 – Frontend rebuild
-- [ ] Tailwind 4 + Alpine; remove Bootstrap, jQuery, Sass, CDNs (fonts/icons self-hosted)
-- [ ] Vehicle-themed design system as Blade components (see `.claude/rules/design.md`)
-- [ ] Game settings screen (letter set, ordered letters, mode/time) replacing Easy/Medium/Hard
-- [ ] "How to play" guide page: rules, scoring, accents/case are optional, Ñ is its own letter, examples per setting
-- [ ] Accessibility pass (keyboard play, focus, reduced motion) and SEO basics (titles, meta, OG, sitemap)
-- [ ] Favicon (`/favicon.ico` returns 404 today)
-- [ ] Menu buttons animate continuously (Playwright cannot click them: "element is not stable"); respect `prefers-reduced-motion`
+- [x] Visual direction approved by the owner: 1930s rubber-hose cartoon (original art), palette Ink #000000 · Celluloid #E7D7B0 · Enamel #FBF8EF · Stage green #265E57 · Mustard #E9A92B · Signal red #C8361F · Plate blue #1F3A97, fonts Chango + Big Shoulders (design canvas kept in the owner's Obsidian)
+Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layouts/master-layout` until every page is migrated.
+
+### PR 1 · `feat/frontend-foundation`
+- [x] Tailwind 4 theme (palette, Chango + Big Shoulders self-hosted latin woff2, preloaded), Alpine (`resources/js/site.js`)
+- [x] Blade components: `plate`, `car`, `odometer`, `sign`, `field`, `flash`, `layouts.app` (header with mobile menu, footer, skip link, grain + vignette, shared ink-boil filters)
+- [x] Home, "how to play" guide (`/como-se-juega`), credits (fonts credited), login, register, profile (delete account in a `<dialog>` with its own error bag)
+- [x] SEO basics on public pages: unique title and description, canonical, Open Graph, one h1, `/sitemap.xml`; profile is `noindex`
+- [x] Favicon (`favicon.svg` + `favicon.ico`)
+
+### PR 2 · `feat/game-settings`
+- [ ] Settings replace Easy/Medium/Hard: letter set (simple | full) and ordered letters; migration on `runs`, `StartGameRequest`, `PlateGenerator`, hard-mode achievement redefined
+- [ ] "Prepara el viaje" settings screen
+
+### PR 3 · `feat/game-screen`
+- [ ] Game screen in Alpine + `fetch` replacing `game-manager.js`: car + plate drop, fuel-gauge timer, odometer, road-sign feedback, achievement toast
+- [ ] Skip button renamed "Pasamatrícula" (−5)
+- [ ] Keyboard shortcuts: Enter submits the word (native form submit), Esc triggers "Pasamatrícula" (chosen over Backspace, which would cost −5 when held after clearing a word); keys shown on the buttons and in the guide
+- [ ] "Fin del trayecto" end screen ("no entry" sign) with the trip receipt from the data stored today
+- [ ] "Sugerir «palabra»" stays hidden until the suggestions flow exists
+
+### PR 4 · `feat/legacy-removal`
+- [ ] Menu, scores and achievements pages on the new layout (fixes the continuously animated menu buttons that Playwright cannot click)
+- [ ] Remove Bootstrap, jQuery, Font Awesome, Sass, SweetAlert2, axios, `master-layout` and the legacy JS
+- [ ] Accessibility pass over the whole game: keyboard play, focus, reduced motion
+
+### PR 5 · `feat/sound`
+- [ ] Sound player with Howler.js: background music and effects (correct, wrong, new plate, achievement), mute and volume persisted in `localStorage`, starts only after a user gesture (browser autoplay rules). Tracks chosen later, with licenses credited on `/creditos`
 
 ## F4 – Game data & stats
 - [ ] `run_words` table (word, plate, valid, reason, points, elapsed_ms) replacing JSON arrays
@@ -97,6 +118,7 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] Hosting decision: Forge + one VPS (Hetzner, EU), shared with other personal projects; move to a dedicated server if load requires it
 - [ ] Domain
 - [ ] Redis, Reverb daemon, queue worker, scheduler, SSL
+- [ ] `Sitemap:` line in `public/robots.txt` once the domain is known; Open Graph image
 - [ ] Deploy script runs `php artisan db:seed --class=AchievementsSeeder --force` after migrations
 - [ ] Run `php artisan dictionary:import`, `dictionary:categories` and `dictionary:plates` once on the server (and after updating the pinned dictionary version)
 - [ ] Security headers (CSP, HSTS), error monitoring, backups, uptime on `/up`
@@ -105,4 +127,4 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 ## Backlog (new ideas)
 - Difficulty by solution count (e.g. hard deals plates with few solutions) and "words you could have made" at the end of a game, both from the `plates`/`words` tables
 - Performance: enable OPcache in Laragon (user action) and re-measure `check-word`; Redis for cache, session and rate limiter in production (F7); endpoint p95 in the F7 load test
-- Word suggestions: "Sugerir palabra" button after a rejected word → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → manual approval for anything not confirmed; n8n optional for notifications/approval via signed webhook
+- Word suggestions: "Sugerir «palabra»" button after a dictionary rejection → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → anything not confirmed is emailed to the owner with approve/reject links (signed URLs, or n8n calling a signed webhook) that update Laravel. The owner never edits the database by hand

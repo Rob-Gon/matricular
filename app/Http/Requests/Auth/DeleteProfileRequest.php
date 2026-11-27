@@ -6,6 +6,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class DeleteProfileRequest extends FormRequest
 {
+    /** Its own bag, so the profile page can reopen the confirmation dialog instead of flagging the profile form. */
+    protected $errorBag = 'deleteAccount';
+
     /**
      * @return array<string, mixed>
      */
