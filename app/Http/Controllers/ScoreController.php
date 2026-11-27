@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ScoreController extends Controller
 {
     /**
      * Muestra la página de puntuaciones con las puntuaciones más altas para cada usuario
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {
