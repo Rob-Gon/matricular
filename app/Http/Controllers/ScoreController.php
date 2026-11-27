@@ -8,79 +8,63 @@ use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ScoreController extends Controller
 {
     /**
-     * Muestra la página de puntuaciones con las puntuaciones más altas para cada usuario
-     *
-     * @return View
+     * Rankings filtered by the query string, plus the player's latest runs.
      */
-    public function index()
+    public function index(Request $request): View
     {
-        // Obtener la puntuación más alta para cada usuario
-        $topScores = $this->topScoresQuery()->get();
+        // Filters come from links and a GET form: invalid values are dropped instead of redirecting.
+        $filters = Validator::make($request->query(), [
+            'mode' => ['nullable', Rule::enum(GameModes::class)],
+            'letter_set' => ['nullable', Rule::enum(LetterSets::class)],
+            'ordered' => ['nullable', 'in:0,1'],
+            'time' => ['nullable', Rule::enum(CountdownModes::class)],
+        ])->valid();
 
-        // Obtener las puntuaciones más recientes del usuario actual
-        $recentTopScores = Run::with('user')
-            ->attempted()
-            ->where('user_id', auth()->user()->id)
-            ->orderBy('created_at', 'desc')
-            ->withTrashed()
+        if (($filters['mode'] ?? null) !== GameModes::CONTRARELOJ->value) {
+            unset($filters['time']);
+        }
+
+        $recentRuns = Run::attempted()
+            ->whereBelongsTo($request->user())
+            ->latest()
             ->limit(10)
             ->get();
 
-        return view('main.scores', compact('topScores', 'recentTopScores'));
-    }
-
-    /**
-     * Top scores filtered by mode, settings and countdown time (AJAX)
-     */
-    public function filter(Request $request): JsonResponse
-    {
-        $filters = $request->validate([
-            'mode' => ['nullable', Rule::enum(GameModes::class)],
-            'letter_set' => ['nullable', Rule::enum(LetterSets::class)],
-            'ordered' => ['nullable', 'boolean'],
-            'time' => ['nullable', Rule::enum(CountdownModes::class)],
+        return view('main.scores', [
+            'filters' => array_filter($filters, fn ($value) => $value !== null && $value !== ''),
+            'topScores' => $this->topScoresQuery($filters)->get(),
+            'recentRuns' => $recentRuns,
         ]);
-
-        $query = $this->topScoresQuery();
-
-        if (isset($filters['mode'])) {
-            $query->where('runs.mode', $filters['mode']);
-        }
-        if (isset($filters['letter_set'])) {
-            $query->where('runs.letter_set', $filters['letter_set']);
-        }
-        if (isset($filters['ordered'])) {
-            $query->where('runs.ordered', $request->boolean('ordered'));
-        }
-        if (($filters['mode'] ?? null) === GameModes::CONTRARELOJ->value && isset($filters['time'])) {
-            $query->where('runs.countdown_time', $filters['time']);
-        }
-
-        return response()->json(['topScores' => $query->get()]);
     }
 
     /**
-     * Top 10 de usuarios por su mejor puntuación, contando solo runs con al menos una palabra intentada
+     * Top 10 players by their best score, counting only runs with at least one attempted word.
      *
+     * @param  array<string, mixed>  $filters
      * @return Builder<User>
      */
-    private function topScoresQuery(): Builder
+    private function topScoresQuery(array $filters): Builder
     {
         return User::select('users.id', 'users.name')
             ->selectRaw('MAX(runs.score) as highest_score')
             ->selectRaw('COUNT(runs.id) as total_runs')
             ->join('runs', 'users.id', '=', 'runs.user_id')
+            ->whereNull('runs.deleted_at')
             ->where(fn (Builder $query) => $query
                 ->whereJsonLength('runs.words_correct', '>', 0)
                 ->orWhereJsonLength('runs.words_error', '>', 0))
+            ->when($filters['mode'] ?? null, fn (Builder $query, string $mode) => $query->where('runs.mode', $mode))
+            ->when($filters['letter_set'] ?? null, fn (Builder $query, string $set) => $query->where('runs.letter_set', $set))
+            ->when(isset($filters['ordered']) && $filters['ordered'] !== '', fn (Builder $query) => $query->where('runs.ordered', $filters['ordered'] === '1'))
+            ->when($filters['time'] ?? null, fn (Builder $query, string $time) => $query->where('runs.countdown_time', $time))
             ->groupBy('users.id', 'users.name')
             ->orderBy('highest_score', 'desc')
             ->orderBy('users.name', 'asc')

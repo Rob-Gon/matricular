@@ -14,7 +14,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 ## Stack & versions
 - PHP 8.3 (Laragon) · Laravel 12 · MySQL 8.4 · Node 26
 - Frontend target: Blade + Alpine.js + Tailwind CSS 4, bundled with Vite.
-- Legacy frontend being removed: Bootstrap 5 (CDN), jQuery (CDN), Sass, Font Awesome (CDN), SweetAlert2. Do not add new code that depends on them.
+- The legacy frontend (Bootstrap, jQuery, Sass, Font Awesome, SweetAlert2) was removed in F3. Do not bring it back.
 - Realtime (planned): Laravel Reverb + laravel-echo. Redis for cache, queues and locks in production.
 - Tests: PHPUnit (already in use; do not switch to Pest).
 
@@ -37,7 +37,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - `app/Models` – `User`, `Run`, `Achievement` (pivot table `user_achievements`).
 - `app/Achievements` + `config/achievements.php` – achievement conditions and catalogue; `AchievementUnlocker` evaluates them. After editing the catalogue run `php artisan db:seed --class=AchievementsSeeder`.
 - `resources/js/game.js` – solo game client (Alpine component `game`, registered in `site.js`); the server stays authoritative.
-- `resources/views/components` – design system as anonymous Blade components (`plate`, `car`, `odometer`, `fuel-gauge`, `road-scene`, `sign`, `field`, `option`, `flash`). Pages on the new design use `<x-layouts.app>`; `layouts/master-layout` is legacy and goes away in F3.
+- `resources/views/components` – design system as anonymous Blade components (`plate`, `car`, `odometer`, `fuel-gauge`, `road-scene`, `sign`, `sticker`, `field`, `option`, `flash`). Every page uses `<x-layouts.app>`.
 - `resources/css/app.css` – Tailwind 4 theme tokens and component classes (`btn`, `paper`, `title-ink`, `field-*`, `opt`, `chip`, `plate`, `car`, `odometer`).
 - Target layout for new code: `app/Actions` or `app/Services` for game logic (word validation, plate generation, scoring), Form Requests for input, Policies for ownership, Events for achievements/broadcasts.
 

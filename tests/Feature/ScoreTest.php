@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CountdownModes;
+use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,11 +22,58 @@ class ScoreTest extends TestCase
         Run::factory()->for($player)->create(['score' => 999]);
         Run::factory()->create(['score' => 500]);
 
-        $topScores = $this->actingAs($viewer)->getJson(route('scores.filter'))->assertOk()->json('topScores');
+        $this->actingAs($viewer)->get(route('scores.view'))
+            ->assertOk()
+            ->assertViewHas('topScores', function ($topScores): bool {
+                return $topScores->count() === 1
+                    && $topScores[0]->name === 'Jugadora'
+                    && (int) $topScores[0]->highest_score === 30
+                    && (int) $topScores[0]->total_runs === 2;
+            });
+    }
 
-        $this->assertCount(1, $topScores);
-        $this->assertSame('Jugadora', $topScores[0]['name']);
-        $this->assertEquals(30, $topScores[0]['highest_score']);
-        $this->assertEquals(2, $topScores[0]['total_runs']);
+    public function test_rankings_filter_by_settings_and_time(): void
+    {
+        $simple = Run::factory()->create(['score' => 40, 'words_correct' => ['BARCO']]);
+        $hard = Run::factory()->countdown(CountdownModes::TREINTA_SEGUNDOS)
+            ->settings(LetterSets::FULL, ordered: true)
+            ->create(['score' => 20, 'words_correct' => ['BARCO']]);
+
+        $names = fn (array $query) => $this->actingAs($simple->user)
+            ->get(route('scores.view', $query))
+            ->assertOk()
+            ->viewData('topScores')
+            ->pluck('name')
+            ->all();
+
+        $this->assertSame([$hard->user->name], $names(['letter_set' => 'full', 'ordered' => '1']));
+        $this->assertSame([$simple->user->name], $names(['ordered' => '0']));
+        $this->assertSame([$hard->user->name], $names(['mode' => 'Contrareloj', 'time' => '30 segundos']));
+        $this->assertSame([], $names(['mode' => 'Contrareloj', 'time' => '5 minutos']));
+
+        // Invalid values are ignored instead of failing the page; a time without countdown mode is dropped.
+        $this->assertCount(2, $names(['letter_set' => 'nope', 'ordered' => 'x', 'time' => '5 minutos']));
+    }
+
+    public function test_recent_runs_link_to_their_trip_receipt(): void
+    {
+        $run = Run::factory()->create(['score' => 15, 'words_correct' => ['BARCO'], 'ended_at' => now()]);
+
+        $this->actingAs($run->user)->get(route('scores.view'))
+            ->assertOk()
+            ->assertSee(route('game.summary', $run))
+            ->assertSee('Sin límite, Letras simples, Cualquier orden');
+    }
+
+    public function test_the_menu_shows_the_personal_best_and_links_to_both_modes(): void
+    {
+        $run = Run::factory()->create(['score' => 120, 'words_correct' => ['BARCO']]);
+
+        $this->actingAs($run->user)->get(route('menu.view'))
+            ->assertOk()
+            ->assertSee('120 puntos, tu mejor marca')
+            ->assertSee('1 partida jugada')
+            ->assertSee(route('game.setup', ['mode' => 'Contrareloj']), false)
+            ->assertSee(route('game.setup', ['mode' => 'Infinito']), false);
     }
 }

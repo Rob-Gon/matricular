@@ -71,14 +71,14 @@
             >
                 <ul class="paper flex flex-col gap-1 p-3 text-xl font-bold md:flex-row md:items-center md:gap-7 md:border-0 md:bg-transparent md:p-0 md:text-celluloid md:shadow-none">
                     @guest
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('guide.view') }}">Cómo se juega</a></li>
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('login.view') }}">Entrar</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('guide.view')) aria-current="page" @endif href="{{ route('guide.view') }}">Cómo se juega</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('login.view')) aria-current="page" @endif href="{{ route('login.view') }}">Entrar</a></li>
                         <li><a class="btn btn-sm btn-primary mt-2 w-full md:mt-0 md:w-auto" href="{{ route('register.view') }}">Crear cuenta</a></li>
                     @else
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('menu.view') }}">Jugar</a></li>
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('scores.view') }}">Clasificación</a></li>
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('achievements.view') }}">Logros</a></li>
-                        <li><a class="block px-2 py-2 hover:text-mustard md:p-0" href="{{ route('profile.view') }}">Perfil</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('menu.view', 'game.*')) aria-current="page" @endif href="{{ route('menu.view') }}">Jugar</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('scores.view')) aria-current="page" @endif href="{{ route('scores.view') }}">Clasificación</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('achievements.view')) aria-current="page" @endif href="{{ route('achievements.view') }}">Logros</a></li>
+                        <li><a class="block px-2 py-2 hover:text-mustard md:aria-[current=page]:text-mustard aria-[current=page]:underline md:p-0" @if (request()->routeIs('profile.view')) aria-current="page" @endif href="{{ route('profile.view') }}">Perfil</a></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
