@@ -34,7 +34,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 ## Architecture
 - `app/Http/Controllers` – thin controllers (currently fat; being refactored).
 - `app/Enums` – game modes, letter sets, countdown durations (runs store `letter_set` + `ordered`).
-- `app/Models` – `User`, `Run`, `Achievement` (pivot table `user_achievements`).
+- `app/Models` – `User`, `Run`, `RunWord` (every attempt in a run), `Achievement` (pivot table `user_achievements`).
 - `app/Achievements` + `config/achievements.php` – achievement conditions and catalogue; `AchievementUnlocker` evaluates them. After editing the catalogue run `php artisan db:seed --class=AchievementsSeeder`.
 - `resources/js/game.js` – solo game client (Alpine component `game`, registered in `site.js`); the server stays authoritative.
 - `resources/js/sound.js` + `resources/sounds/{sfx,music}` – Howler.js player (Alpine store `sound`). Effects and tracks are picked up by file name; credit every new asset on `/creditos`.

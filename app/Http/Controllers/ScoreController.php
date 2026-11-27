@@ -6,6 +6,7 @@ use App\Enums\CountdownModes;
 use App\Enums\GameModes;
 use App\Enums\LetterSets;
 use App\Models\Run;
+use App\Models\RunWord;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -58,9 +59,9 @@ class ScoreController extends Controller
             ->selectRaw('COUNT(runs.id) as total_runs')
             ->join('runs', 'users.id', '=', 'runs.user_id')
             ->whereNull('runs.deleted_at')
-            ->where(fn (Builder $query) => $query
-                ->whereJsonLength('runs.words_correct', '>', 0)
-                ->orWhereJsonLength('runs.words_error', '>', 0))
+            ->whereExists(fn ($query) => $query->select('id')->from('run_words')
+                ->whereColumn('run_words.run_id', 'runs.id')
+                ->where('run_words.kind', RunWord::KIND_WORD))
             ->when($filters['mode'] ?? null, fn (Builder $query, string $mode) => $query->where('runs.mode', $mode))
             ->when($filters['letter_set'] ?? null, fn (Builder $query, string $set) => $query->where('runs.letter_set', $set))
             ->when(isset($filters['ordered']) && $filters['ordered'] !== '', fn (Builder $query) => $query->where('runs.ordered', $filters['ordered'] === '1'))

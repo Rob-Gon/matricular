@@ -20,19 +20,34 @@ class Dictionary
      */
     public function exists(string $word): ?bool
     {
-        $key = WordNormalizer::key($word);
+        $form = $this->find($word);
 
-        if (DB::table('words')->where('key', $key)->exists()) {
-            return true;
+        return $form === null ? null : $form !== false;
+    }
+
+    /**
+     * The dictionary spelling of the word (with accents), false if it does not exist,
+     * or null when it is unknown locally and the API could not answer.
+     */
+    public function find(string $word): string|false|null
+    {
+        $key = WordNormalizer::key($word);
+        $forms = DB::table('words')->where('key', $key)->orderBy('form')->pluck('form');
+
+        if ($forms->isNotEmpty()) {
+            // One key can have several spellings (solo / sólo): keep the one the player typed, if any.
+            return $forms->first(fn (string $form) => $form === mb_strtolower($word)) ?? $forms->first();
         }
 
         $entry = $this->rae->lookup($word);
 
         if (is_array($entry)) {
             $this->learn($key, $entry);
+
+            return mb_strtolower($entry['form']);
         }
 
-        return $entry === null ? null : $entry !== false;
+        return $entry === null ? null : false;
     }
 
     /**

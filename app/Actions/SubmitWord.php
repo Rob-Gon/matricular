@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Models\Run;
+use App\Models\RunWord;
 use App\Services\Dictionary;
 use App\Services\PlateGenerator;
 use App\Support\WordNormalizer;
@@ -29,35 +30,38 @@ class SubmitWord
             }
 
             // Stored and compared by key, so "camión" and "camion" are the same word.
+            $input = trim($input);
             $word = WordNormalizer::key($input);
             $plate = $run->plateLetters();
             $penalty = 'Has perdido '.Run::POINTS_PENALTY.' puntos.';
 
             if ($run->hasCorrectWord($word)) {
+                $run->addRepeatedWord($word, $input);
+
                 return ['success' => false, 'message' => 'Ya has usado esa palabra en esta partida. No suma puntos.'];
             }
 
             if (! $this->containsLetters($word, $plate)) {
-                return $this->reject($run, $word, "¡Fallo! La palabra no contiene todas las letras de la matrícula. {$penalty}");
+                return $this->reject($run, $word, $input, RunWord::REASON_MISSING_LETTERS, "¡Fallo! La palabra no contiene todas las letras de la matrícula. {$penalty}");
             }
 
             if ($run->ordered && ! $this->containsInOrder($word, $plate)) {
-                return $this->reject($run, $word, "¡Fallo! Las letras deben aparecer en el orden de la matrícula. {$penalty}");
+                return $this->reject($run, $word, $input, RunWord::REASON_WRONG_ORDER, "¡Fallo! Las letras deben aparecer en el orden de la matrícula. {$penalty}");
             }
 
             // The raw input keeps any accents the player typed, which saves the API a suggestion round.
-            $exists = $this->dictionary->exists($input);
+            $form = $this->dictionary->find($input);
 
-            if ($exists === null) {
+            if ($form === null) {
                 return ['success' => false, 'message' => 'No se ha podido verificar la palabra. Inténtalo de nuevo, no has perdido puntos.'];
             }
 
-            if (! $exists) {
-                return $this->reject($run, $word, "¡Fallo! La palabra no existe en el diccionario. {$penalty}");
+            if ($form === false) {
+                return $this->reject($run, $word, $input, RunWord::REASON_NOT_IN_DICTIONARY, "¡Fallo! La palabra no existe en el diccionario. {$penalty}");
             }
 
-            $run->addCorrectWord($word);
-            $run->plate = $this->plates->generate($run->letter_set, $run->ordered);
+            $run->addCorrectWord($word, $input, $form);
+            $run->dealPlate($this->plates->generate($run->letter_set, $run->ordered));
             $run->save();
 
             return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'word' => $word];
@@ -67,9 +71,9 @@ class SubmitWord
     /**
      * @return array{success: false, message: string}
      */
-    private function reject(Run $run, string $word, string $message): array
+    private function reject(Run $run, string $word, string $input, string $reason, string $message): array
     {
-        $run->addErrorWord($word);
+        $run->addErrorWord($word, $input, $reason);
         $run->save();
 
         return ['success' => false, 'message' => $message];
