@@ -49,7 +49,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 ## External services & integrations
 - Word validation today: unofficial `https://rae-api.com/api/words/{word}` (being replaced by a local dictionary; may remain as fallback only).
 - Planned local dictionary sources: Spanish Wiktionary extracts (kaikki.org, CC BY-SA, attribution required on the site) and Hunspell es_ES (verify license before import).
-- GitHub: https://github.com/Rob-Gon/matricular (private).
+- GitHub: https://github.com/Rob-Gon/matricular (public). Never commit secrets or real user data.
 
 ## Recommended Claude Code plugins
 From `claude-plugins-official`: laravel-boost, frontend-design, security-guidance, playwright, context7, feature-dev, code-review, pr-review-toolkit, github, claude-md-management. Optional (need npm global installs): php-lsp, typescript-lsp.

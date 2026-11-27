@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Achievement;
+use Illuminate\Database\Seeder;
 
 class AchievementsSeeder extends Seeder
 {
@@ -65,7 +64,7 @@ class AchievementsSeeder extends Seeder
         ];
 
         foreach ($achievements as $achievement) {
-            Achievement::firstOrCreate(['name' => $achievement['name']],$achievemen);
+            Achievement::firstOrCreate(['name' => $achievement['name']], $achievemen);
         }
     }
 }

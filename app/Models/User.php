@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Run;
-use App\Models\UserAchievement;
 
 class User extends Authenticatable
 {
@@ -23,7 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'remember_token'
+        'remember_token',
     ];
 
     /**
@@ -51,8 +49,6 @@ class User extends Authenticatable
 
     /**
      * Get the runs for the user.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function runs(): HasMany
     {
@@ -73,21 +69,23 @@ class User extends Authenticatable
     // Desbloquear un logro
     public function unlockAchievement($achievementId)
     {
-        if (!$this->hasAchievement($achievementId)) {
+        if (! $this->hasAchievement($achievementId)) {
             UserAchievement::create([
                 'user_id' => $this->id,
                 'achievement_id' => $achievementId,
-                'unlocked_at' => now()
+                'unlocked_at' => now(),
             ]);
+
             return true;
         }
+
         return false;
     }
 
     // Obtener logros desbloqueados
     public function unlockedAchievements()
     {
-        return $this->achievements()->whereHas('userAchievements', function($query) {
+        return $this->achievements()->whereHas('userAchievements', function ($query) {
             $query->where('user_id', $this->id)->whereNotNull('unlocked_at');
         });
     }

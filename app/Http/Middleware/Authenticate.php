@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use Closure;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Closure;
 
 class Authenticate extends Middleware
 {
@@ -13,17 +13,16 @@ class Authenticate extends Middleware
      * Redirige al usuario a la página de inicio si no ha iniciado sesión
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string[]  ...$guards
      * @return mixed
      */
     public function handle($request, Closure $next, ...$guards)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
-            
+
             return redirect()->route('login.view')->with('error', 'Debes iniciar sesión para acceder a esta página.');
         }
 
@@ -37,4 +36,4 @@ class Authenticate extends Middleware
     {
         return route('login.view');
     }
-} 
+}
