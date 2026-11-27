@@ -12,7 +12,9 @@ Update this file at the end of every task: tick what is done, add findings, move
 - [x] Install Claude Code plugins (user action, commands in the Obsidian note "Plugins Claude Code - Instalación")
 - [ ] Configure GitHub repository settings (user action, see `docs/github-setup.md`)
 - [x] Larastan (level 5 + baseline of 11 legacy errors) + Pint, GitHub Actions CI (Pint, Larastan, tests, `npm run build`)
-- [ ] Update vulnerable dependencies (`composer audit`: 62 advisories in 15 packages; `npm audit`: 3 critical, 9 high in dev deps), then add `composer audit` to CI
+- [x] Update vulnerable dependencies (Laravel 12.18 → 12.74; `composer audit` and `npm audit` clean) and run both audits in CI
+- [ ] Laravel Boost (`laravel/boost` dev dependency + `boost:install`) so the laravel-boost MCP connects
+- [ ] GitHub MCP plugin: needs `GITHUB_PERSONAL_ACCESS_TOKEN` in the user's environment (user action)
 - [x] Real README (install, run, test)
 - [x] Wipe local test data (`migrate:fresh`, local only)
 
