@@ -97,7 +97,8 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 - [x] Accessibility pass: current page marked with `aria-current` in the nav, no horizontal scroll at 390 px on any page (a screen-reader-only label inside a scrolling table escaped its box), keyboard play and reduced motion already covered by PR 3
 
 ### PR 5 · `feat/sound`
-- [ ] Sound player with Howler.js: background music and effects (correct, wrong, new plate, achievement), mute and volume persisted in `localStorage`, starts only after a user gesture (browser autoplay rules). Tracks chosen later, with licenses credited on `/creditos`
+- [x] Sound player with Howler.js (`resources/js/sound.js`, Alpine store `sound`): effects for correct, wrong, warning, plate skip, achievement and the last ten seconds; effects, music and volume persisted in `localStorage`; music starts on the first key press or click (browser autoplay rules) and fades out when the run ends
+- [x] Effects: Kenney "Interface Sounds" (CC0). Music: Tom Feldmann's "Old Cartoon Music Pack Lite" (CC BY 4.0, 6 tracks converted to 112 kbps MP3 with normalized loudness), shuffled as a playlist; both credited on `/creditos`. Any file dropped in `resources/sounds/music` joins the playlist
 
 ## F4 – Game data & stats
 - [ ] `run_words` table (word, plate, valid, reason, points, elapsed_ms) replacing JSON arrays

@@ -27,6 +27,8 @@ export default (config) => ({
     skipKeyAlone: false,
 
     init() {
+        this.$store.sound.preload();
+
         if (this.remaining !== null) {
             // Count against a deadline, not ticks: background tabs throttle timers.
             this.deadline = Date.now() + this.remaining * 1000;
@@ -39,7 +41,13 @@ export default (config) => ({
     },
 
     tick() {
+        const before = this.remaining;
         this.remaining = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000));
+
+        // The fuel gauge ticks through the last ten seconds.
+        if (this.remaining !== before && this.remaining > 0 && this.remaining <= 10) {
+            this.$store.sound.play('tick');
+        }
 
         if (this.remaining === 0) {
             this.end();
@@ -54,17 +62,20 @@ export default (config) => ({
             return;
         }
 
-        if (await this.send(config.urls.word, { word })) {
+        if (await this.send(config.urls.word, { word }, 'word')) {
             this.word = '';
         }
     },
 
     skip() {
-        this.send(config.urls.plate, {});
+        this.send(config.urls.plate, {}, 'skip');
     },
 
     // The skip key pressed and released on its own skips the plate; shortcuts such as Ctrl+Z do not.
     onKeydown(event) {
+        // The first key press is the user gesture browsers require before playing audio.
+        this.$store.sound.startMusic();
+
         if (event.key !== SKIP_KEY) {
             this.skipKeyAlone = false;
         } else if (!event.repeat) {
@@ -84,7 +95,12 @@ export default (config) => ({
         }
     },
 
-    async send(url, body) {
+    onPointerdown() {
+        this.skipKeyAlone = false;
+        this.$store.sound.startMusic();
+    },
+
+    async send(url, body, action) {
         if (this.busy || this.over) {
             return false;
         }
@@ -110,6 +126,7 @@ export default (config) => ({
             }
 
             if (!response.ok) {
+                this.$store.sound.play('warn');
                 this.feedback = {
                     kind: 'warn',
                     text: FAILURES[response.status] ?? data.message ?? 'No se ha podido comprobar. Inténtalo de nuevo, no has perdido puntos.',
@@ -117,9 +134,10 @@ export default (config) => ({
                 return false;
             }
 
-            this.apply(data);
+            this.apply(data, action);
             return true;
         } catch {
+            this.$store.sound.play('warn');
             this.feedback = { kind: 'warn', text: 'No hay conexión con el servidor. Inténtalo de nuevo, no has perdido puntos.' };
             return false;
         } finally {
@@ -128,8 +146,9 @@ export default (config) => ({
         }
     },
 
-    apply(data) {
+    apply(data, action) {
         const lostPoints = data.score < this.score;
+        this.$store.sound.play(data.success ? 'correct' : action === 'skip' ? 'skip' : lostPoints ? 'wrong' : 'warn');
 
         this.feedback = { kind: data.success ? 'ok' : lostPoints ? 'fail' : 'warn', text: data.message };
         this.score = data.score;
@@ -158,6 +177,7 @@ export default (config) => ({
     notify(achievement) {
         const toast = { id: `${achievement.key}-${Date.now()}`, name: achievement.name };
         this.toasts.push(toast);
+        setTimeout(() => this.$store.sound.play('achievement'), 300);
         setTimeout(() => this.dismiss(toast.id), 6000);
     },
 
@@ -172,6 +192,7 @@ export default (config) => ({
 
         this.over = true;
         clearInterval(this.timer);
+        this.$store.sound.stopMusic();
 
         try {
             await fetch(config.urls.end, {

@@ -44,6 +44,21 @@
                     ambas bajo la <a class="underline hover:text-plate" href="https://openfontlicense.org" rel="noopener">SIL Open Font License 1.1</a>.
                 </p>
             </section>
+
+            <section aria-labelledby="sonido" class="paper flex flex-col gap-3 p-7 text-xl">
+                <h2 id="sonido" class="font-display text-3xl">Sonido</h2>
+                <p>
+                    Efectos de «Interface Sounds», de <a class="underline hover:text-plate" href="https://kenney.nl" rel="noopener">Kenney</a>,
+                    de dominio público (<a class="underline hover:text-plate" href="https://creativecommons.org/publicdomain/zero/1.0/deed.es" rel="noopener">CC0 1.0</a>).
+                </p>
+                <p>
+                    Música: «Boogie Wonderland», «Bourbon Blues», «Cool Cat Caper», «Juke Joint Jive», «Swingin' Safari» y «Velvet Voyage»,
+                    del <a class="underline hover:text-plate" href="https://tomfeldmann.itch.io/old-cartoon-music-pack-lite-free" rel="noopener">Old Cartoon Music Pack Lite</a>
+                    de <a class="underline hover:text-plate" href="https://tomfeldmann.itch.io" rel="noopener">Tom Feldmann</a>,
+                    bajo licencia <a class="underline hover:text-plate" href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener">CC BY 4.0</a>.
+                    Las pistas se han convertido a MP3 y se ha igualado su volumen.
+                </p>
+            </section>
         </article>
     </div>
 </x-layouts.app>

@@ -22,7 +22,7 @@
         x-data="game(@js($config))"
         @keydown.window="onKeydown($event)"
         @keyup.window="onKeyup($event)"
-        @mousedown.window="skipKeyAlone = false"
+        @pointerdown.window="onPointerdown()"
         class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-[56rem] xl:pb-10"
     >
         <h1 class="sr-only">Partida</h1>
@@ -107,6 +107,7 @@
                 @if (! $countdownTotal)
                     <button type="button" class="btn btn-danger" @click="$refs.confirmEnd.showModal()" :disabled="over">Terminar partida</button>
                 @endif
+                <x-sound-controls class="ml-auto" />
             </div>
         </form>
 
