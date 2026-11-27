@@ -95,7 +95,7 @@ class AchievementTest extends TestCase
     public function test_ending_the_first_game_with_a_word_unlocks_first_game(): void
     {
         $empty = Run::factory()->create();
-        $played = Run::factory()->create(['words_error' => ['BRCX']]);
+        $played = Run::factory()->attempts(invalid: ['BRCX'])->create();
 
         $this->actingAs($empty->user)->postJson(route('game.end', $empty))->assertJsonPath('achievements', []);
         $this->actingAs($played->user)->postJson(route('game.end', $played))->assertJsonPath('achievements.0.key', 'first_game');
@@ -106,7 +106,7 @@ class AchievementTest extends TestCase
 
     public function test_the_summary_closes_a_countdown_that_ran_out_with_the_tab_closed(): void
     {
-        $run = Run::factory()->countdown()->create(['words_error' => ['BRCX'], 'ends_at' => now()->subMinute()]);
+        $run = Run::factory()->countdown()->attempts(invalid: ['BRCX'])->create(['ends_at' => now()->subMinute()]);
 
         $this->actingAs($run->user)->get(route('game.summary', $run))
             ->assertOk()
@@ -120,14 +120,14 @@ class AchievementTest extends TestCase
     public function test_five_games_in_ten_minutes(): void
     {
         $user = User::factory()->create();
-        Run::factory()->for($user)->count(3)->create(['words_error' => ['X'], 'created_at' => now()->subMinutes(5)]);
-        Run::factory()->for($user)->create(['words_error' => ['X'], 'created_at' => now()->subMinutes(30)]);
-        $fourth = Run::factory()->for($user)->create(['words_error' => ['X']]);
+        Run::factory()->for($user)->count(3)->attempts(invalid: ['X'])->create(['created_at' => now()->subMinutes(5)]);
+        Run::factory()->for($user)->attempts(invalid: ['X'])->create(['created_at' => now()->subMinutes(30)]);
+        $fourth = Run::factory()->for($user)->attempts(invalid: ['X'])->create();
 
         $this->actingAs($user)->postJson(route('game.end', $fourth))
             ->assertJsonMissing(['key' => 'quick_succession']);
 
-        $fifth = Run::factory()->for($user)->create(['words_error' => ['X']]);
+        $fifth = Run::factory()->for($user)->attempts(invalid: ['X'])->create();
 
         $this->actingAs($user)->postJson(route('game.end', $fifth))
             ->assertJsonFragment(['key' => 'quick_succession']);
@@ -136,8 +136,8 @@ class AchievementTest extends TestCase
     public function test_twenty_five_games_in_a_day(): void
     {
         $user = User::factory()->create();
-        Run::factory()->for($user)->count(24)->create(['words_error' => ['X'], 'created_at' => now()->startOfDay()->addMinute()]);
-        $last = Run::factory()->for($user)->create(['words_error' => ['X']]);
+        Run::factory()->for($user)->count(24)->attempts(invalid: ['X'])->create(['created_at' => now()->startOfDay()->addMinute()]);
+        $last = Run::factory()->for($user)->attempts(invalid: ['X'])->create();
 
         $this->actingAs($user)->postJson(route('game.end', $last))
             ->assertJsonFragment(['key' => 'touch_grass']);

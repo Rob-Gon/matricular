@@ -31,13 +31,13 @@ class WordNormalizationTest extends TestCase
             ->assertOk()
             ->assertJson(['success' => true, 'score' => Run::POINTS_CORRECT]);
 
-        $this->assertSame(['CAMION'], $run->fresh()->words_correct);
+        $this->assertSame(['CAMION'], $run->runWords()->pluck('key')->all());
     }
 
     public function test_the_same_word_with_and_without_accents_counts_once(): void
     {
         Http::fake(['rae-api.com/*' => Http::response(['ok' => true])]);
-        $run = Run::factory()->create(['plate' => 'CMN', 'words_correct' => ['CAMION'], 'score' => 10]);
+        $run = Run::factory()->attempts(valid: ['CAMION'])->create(['plate' => 'CMN', 'score' => 10]);
 
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'camión'])
             ->assertJson(['success' => false, 'score' => 10]);

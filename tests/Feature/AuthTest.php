@@ -151,7 +151,7 @@ class AuthTest extends TestCase
 
     public function test_rankings_do_not_expose_emails(): void
     {
-        $run = Run::factory()->create(['words_correct' => ['BARCO'], 'score' => 10]);
+        $run = Run::factory()->attempts(valid: ['BARCO'])->create(['score' => 10]);
 
         $this->actingAs($run->user)->get(route('scores.view'))->assertOk()->assertDontSee($run->user->email);
     }

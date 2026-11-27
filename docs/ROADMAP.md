@@ -108,7 +108,7 @@ Done 2026-11-27 in five PRs plus follow-ups (skip key, desktop road in perspecti
 - [x] Repeated words are now recorded (0 points)
 
 ### PR 2 · `refactor/drop-run-json`
-- [ ] Stop writing and drop `runs.words_correct`, `words_error`, `chars_skipped` (separate deploy, so the previous code keeps working during PR 1's rollout); factory states for `run_words` in tests
+- [x] Stop writing and drop `runs.words_correct`, `words_error`, `chars_skipped` (separate deploy, so the previous code keeps working during PR 1's rollout; rollback rebuilds them from `run_words`); `RunFactory::attempts()` state for tests
 
 ### PR 3 · `feat/trip-stats`
 - [ ] End-of-game stats: rejection reasons, accuracy, average answer time, "words you could have made" per plate (`plates` + `words`)

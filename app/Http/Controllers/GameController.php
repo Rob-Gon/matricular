@@ -36,8 +36,6 @@ class GameController extends Controller
             'plate' => $plates->generate($request->letterSet(), $request->ordered()),
             'plate_dealt_at' => now(),
             'ends_at' => $countdown ? now()->addSeconds($countdown->seconds()) : null,
-            'words_correct' => [],
-            'words_error' => [],
         ]);
 
         return redirect()->route('game.show', $run);
