@@ -44,6 +44,14 @@
                     ambas bajo la <a class="underline hover:text-plate" href="https://openfontlicense.org" rel="noopener">SIL Open Font License 1.1</a>.
                 </p>
             </section>
+
+            <section aria-labelledby="sonido" class="paper flex flex-col gap-3 p-7 text-xl">
+                <h2 id="sonido" class="font-display text-3xl">Sonido</h2>
+                <p>
+                    Efectos de «Interface Sounds», de <a class="underline hover:text-plate" href="https://kenney.nl" rel="noopener">Kenney</a>,
+                    de dominio público (<a class="underline hover:text-plate" href="https://creativecommons.org/publicdomain/zero/1.0/deed.es" rel="noopener">CC0 1.0</a>).
+                </p>
+            </section>
         </article>
     </div>
 </x-layouts.app>

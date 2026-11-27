@@ -1,7 +1,9 @@
 import Alpine from 'alpinejs';
 import game from './game';
+import sound from './sound';
 
 Alpine.data('game', game);
+Alpine.store('sound', sound());
 
 // Live summary of the "Prepara el viaje" settings form.
 Alpine.data('gameSetup', (initial) => ({

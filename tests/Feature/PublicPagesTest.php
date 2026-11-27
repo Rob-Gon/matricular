@@ -89,6 +89,6 @@ class PublicPagesTest extends TestCase
 
     public function test_credits_attribute_the_fonts(): void
     {
-        $this->get(route('credits.view'))->assertSee('Chango')->assertSee('Big Shoulders')->assertSee('SIL Open Font License');
+        $this->get(route('credits.view'))->assertSee('Chango')->assertSee('Big Shoulders')->assertSee('SIL Open Font License')->assertSee('Kenney');
     }
 }
