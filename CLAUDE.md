@@ -29,7 +29,7 @@ Personal project. A competitive word game in the browser: the player gets the le
 - test: `php artisan test`
 - lint: `vendor/bin/pint`
 - build: `npm run build`
-- dictionary: `php artisan dictionary:import` (downloads the pinned RLA-ES Hunspell files to `storage/app/dictionary/`, ~2 min), then `php artisan dictionary:categories` (Spanish Wiktionary via kaikki.org, ~100 MB, ~4 min) and `php artisan dictionary:plates` (solution counts per plate, ~15 s; also scheduled weekly)
+- dictionary: `php artisan dictionary:import` (downloads the pinned RLA-ES Hunspell files to `storage/app/dictionary/`, ~2 min), then `php artisan dictionary:categories` (Spanish Wiktionary via kaikki.org, ~100 MB, ~4 min) and `php artisan dictionary:plates` (solution counts and shortest example words per plate, ~35 s; also scheduled weekly)
 
 ## Architecture
 - `app/Http/Controllers` – thin controllers (currently fat; being refactored).

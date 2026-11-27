@@ -75,6 +75,25 @@ class RunWord extends Model
         return $this->form ?? mb_strtolower((string) $this->input);
     }
 
+    public function isRepeated(): bool
+    {
+        return $this->reason === self::REASON_REPEATED;
+    }
+
+    /**
+     * Why the word was rejected, in the player's words.
+     */
+    public function reasonLabel(): string
+    {
+        return match ($this->reason) {
+            self::REASON_MISSING_LETTERS => 'Le faltan letras de la matrícula',
+            self::REASON_WRONG_ORDER => 'Las letras no van en el orden de la matrícula',
+            self::REASON_NOT_IN_DICTIONARY => 'No está en el diccionario',
+            self::REASON_REPEATED => 'Repetida: no suma ni resta',
+            default => 'No valió',
+        };
+    }
+
     /**
      * Words the player tried, valid or not (skips excluded).
      *

@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class BuildPlates extends Command
 {
+    /** Shortest words kept per plate; the trip receipt shows a few of them, minus the ones already played. */
+    public const EXAMPLES = 6;
+
     protected $signature = 'dictionary:plates';
 
-    protected $description = 'Count how many dictionary words solve each possible plate';
+    protected $description = 'Count how many dictionary words solve each possible plate and keep the shortest ones';
 
     public function handle(): int
     {
@@ -23,8 +26,22 @@ class BuildPlates extends Command
         $ordered = [];
         /** @var array<string, int> $anyOrder words containing the letters in any order, keyed by sorted letters */
         $anyOrder = [];
+        /** @var array<string, array<string, int>> $orderedExamples shortest keys per plate => length */
+        $orderedExamples = [];
+        /** @var array<string, array<string, int>> $anyOrderExamples shortest keys per sorted letters => length */
+        $anyOrderExamples = [];
+
+        // Examples must look like real everyday words: a headword (singular, infinitive) that Wiktionary
+        // also lists. That drops conjugations like "ahajad", abbreviations and rare spellings.
+        $exampleKeys = array_flip(DB::table('words')
+            ->whereColumn('form', 'lemma')
+            ->whereExists(fn ($query) => $query->select(DB::raw(1))->from('word_categories')->whereColumn('word_categories.word', 'words.lemma'))
+            ->distinct()
+            ->pluck('key')
+            ->all());
 
         // Keys are uppercase without accents, so a word's plate letters are plain ASCII bytes.
+        // Keys arrive in alphabetical order, so among words of equal length the first ones are kept.
         foreach (DB::table('words')->select('key')->distinct()->lazyById(5000, 'key') as $row) {
             $letters = array_values(array_filter(str_split($row->key), fn (string $char) => isset($alphabet[$char])));
             $count = count($letters);
@@ -42,14 +59,23 @@ class BuildPlates extends Command
                 }
             }
 
+            $length = isset($exampleKeys[$row->key]) ? mb_strlen($row->key) : null;
             $sorted = [];
             foreach (array_keys($triples) as $triple) {
                 $ordered[$triple] = ($ordered[$triple] ?? 0) + 1;
                 $sorted[$this->sortLetters((string) $triple)] = true;
+
+                if ($length !== null) {
+                    $this->keepShortest($orderedExamples, (string) $triple, $row->key, $length);
+                }
             }
 
             foreach (array_keys($sorted) as $multiset) {
                 $anyOrder[$multiset] = ($anyOrder[$multiset] ?? 0) + 1;
+
+                if ($length !== null) {
+                    $this->keepShortest($anyOrderExamples, (string) $multiset, $row->key, $length);
+                }
             }
         }
 
@@ -60,11 +86,14 @@ class BuildPlates extends Command
             foreach (PlateGenerator::FULL_LETTERS as $b) {
                 foreach (PlateGenerator::FULL_LETTERS as $c) {
                     $plate = $a.$b.$c;
+                    $multiset = $this->sortLetters($plate);
                     $rows[] = [
                         'plate' => $plate,
                         'simple' => isset($simple[$a], $simple[$b], $simple[$c]),
-                        'solutions' => $anyOrder[$this->sortLetters($plate)] ?? 0,
+                        'solutions' => $anyOrder[$multiset] ?? 0,
                         'solutions_ordered' => $ordered[$plate] ?? 0,
+                        'examples' => json_encode(array_keys($anyOrderExamples[$multiset] ?? [])),
+                        'examples_ordered' => json_encode(array_keys($orderedExamples[$plate] ?? [])),
                     ];
                 }
             }
@@ -89,6 +118,24 @@ class BuildPlates extends Command
         ));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Keeps the EXAMPLES shortest keys for a plate, sorted by length (stable, so ties stay alphabetical).
+     *
+     * @param  array<string, array<string, int>>  $examples
+     */
+    private function keepShortest(array &$examples, string $plate, string $key, int $length): void
+    {
+        $top = $examples[$plate] ?? [];
+
+        if (count($top) >= self::EXAMPLES && $length >= end($top)) {
+            return;
+        }
+
+        $top[$key] = $length;
+        asort($top);
+        $examples[$plate] = array_slice($top, 0, self::EXAMPLES, true);
     }
 
     private function sortLetters(string $plate): string
