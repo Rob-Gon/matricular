@@ -135,11 +135,21 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 - [ ] Multiplayer unlocks pushed over Reverb in F6
 
 ## F6 – Multiplayer
-- [ ] Reverb + Echo setup, lobby create/join (code + optional password), presence and ready state
-- [ ] Formats: parallel race, shared plate rounds, first wins
-- [ ] Tie handling: tie window for near-simultaneous answers, `tie_resolution` lobby option (shared | tiebreak plate)
-- [ ] Synced start (traffic light), live scoreboard, end-of-game stats, reconnection
-- [ ] Playwright E2E with multiple players
+Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lobbies) and `.claude/rules/realtime.md`. Screens are mocked up on the design canvas first.
+
+- [ ] Canvas: lobby with the 16-slot starting grid and car colours, traffic-light start, live scoreboard per format, podium and results, reactions and horn
+### PR 1 · `feat/lobbies`
+- [ ] Reverb + Echo (local Redis from Laragon), lobbies and lobby players, create/join by code + optional password, presence channel, ready state, host transfer, kick, car colour, idle close after 30 min
+### PR 2 · `feat/parallel-race`
+- [ ] Synced start (traffic light), seeded plate sequence, live scoreboard, results and podium, `tie_resolution`, "Revancha"
+### PR 3 · `feat/shared-rounds`
+- [ ] Rounds (1–30) of up to 5 min, words already used by others in the round score 0
+### PR 4 · `feat/first-wins`
+- [ ] First valid answer takes the plate (1–50 plates), tie window, per-plate limit, plate passes when everyone failed
+### PR 5 · `feat/lobby-reactions`
+- [ ] Emoji reaction bubbles and horns (random sound, 5 s cooldown, mutable)
+### PR 6 · `feat/multiplayer-polish`
+- [ ] Multiplayer stats (wins, podiums), reconnection, Playwright E2E with several browser contexts
 
 ## F7 – Production
 - [x] Hosting decision: Forge + one VPS (Hetzner, EU), shared with other personal projects; move to a dedicated server if load requires it

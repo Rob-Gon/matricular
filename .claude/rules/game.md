@@ -22,9 +22,11 @@ These replace the old Easy/Medium/Hard difficulty and can be combined:
 - Valid word: +10. Invalid word: −5. Skip plate ("Pasamatrícula", also Control, or Command on Mac, pressed alone): −5.
 
 ## Multiplayer formats (all three are lobby options)
-1. **Parallel race**: every player gets the same seeded plate sequence and advances independently. Highest score at the end wins.
-2. **Shared plate rounds**: everyone sees the same plate each round. A word already used by another player in that round does not score.
-3. **First wins**: everyone sees the same plate. The first valid answer takes the round and the plate changes for everybody. Resolve ties atomically on the server (lock or unique constraint), never on the client.
+Letter set and ordered letters work as in solo. Scoring is the solo one (+10 / −5) in every format.
+
+1. **Parallel race**: every player gets the same seeded plate sequence and advances independently. Highest score at the end wins. Length: any countdown, custom included (1–60 min). "Pasamatrícula" allowed (−5).
+2. **Shared plate rounds**: everyone sees the same plate each round. A word already used by another player in that round does not score (0, not a penalty). Host sets rounds (1–30) and seconds per round (up to 5 min). No "Pasamatrícula".
+3. **First wins**: everyone sees the same plate. The first valid answer takes the round and the plate changes for everybody; wrong answers cost −5. Host sets the number of plates (1–50) and a per-plate limit (default 30 s, 10 s–2 min). The plate also passes, with no penalty, once every player has failed it or the limit runs out. No "Pasamatrícula". Resolve ties atomically on the server (lock or unique constraint), never on the client.
 
 ## Ties
 - **Near-simultaneous answers ("first wins")**: the server timestamps each accepted word on arrival. The first valid word opens a tie window (lobby option: 0 / 150 / 300 ms, default 150). Every valid word received inside the window also scores; the round closes when the window ends.
@@ -34,5 +36,10 @@ These replace the old Easy/Medium/Hard difficulty and can be combined:
 
 ## Lobbies
 - 2–16 players, registered users only. Host configures the settings, players mark "ready", the server sets `starts_at`/`ends_at`.
-- Join by short code; optional password stored hashed.
+- Join by short code only (no public list for now); optional password stored hashed. No joining once the match has started (no spectators).
+- If the host leaves, the player who has been in the lobby longest becomes host. The host can kick players.
+- Each player picks a car colour on the starting grid.
+- "Revancha" restarts the lobby with the same players after a match. A lobby with no activity for 30 minutes closes.
+- Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn button: a random horn sound for everyone, once every 5 s per player; anyone can mute other players' horns in the sound menu.
 - End-of-game stats: ranking, longest word, shortest word, fastest answer, most words, accuracy.
+- Multiplayer matches do not count for the solo rankings; they get their own stats (wins, podiums). No multiplayer achievements (owner's choice: platinum must stay reachable playing solo).
