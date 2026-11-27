@@ -26,6 +26,13 @@ class StartGameRequest extends FormRequest
                 Rule::requiredIf($this->input('mode') === GameModes::CONTRARELOJ->value),
                 Rule::enum(CountdownModes::class),
             ],
+            'custom_minutes' => [
+                'nullable',
+                Rule::requiredIf($this->input('mode') === GameModes::CONTRARELOJ->value
+                    && $this->input('countdown_time') === CountdownModes::PERSONALIZADO->value),
+                'integer',
+                'between:1,'.CountdownModes::MAX_CUSTOM_MINUTES,
+            ],
         ];
     }
 
@@ -52,11 +59,23 @@ class StartGameRequest extends FormRequest
             : null;
     }
 
+    /** Length of the countdown in seconds: the preset one, or the minutes the player chose. */
+    public function countdownSeconds(): ?int
+    {
+        $countdown = $this->countdown();
+
+        return $countdown?->isCustom() ? (int) $this->validated('custom_minutes') * 60 : $countdown?->seconds();
+    }
+
     protected function failedValidation(Validator $validator): never
     {
-        // Every field is a preset choice, so a single flashed error is enough.
+        // Every field but the custom minutes is a preset choice, so a single flashed error is enough.
+        $message = $validator->errors()->has('custom_minutes')
+            ? 'Elige una duración personalizada de 1 a '.CountdownModes::MAX_CUSTOM_MINUTES.' minutos.'
+            : 'Error: datos de la partida incompletos o no válidos.';
+
         throw new HttpResponseException(
-            redirect()->route('game.setup')->with('error', 'Error: datos de la partida incompletos o no válidos.')
+            redirect()->route('game.setup')->with('error', $message)
         );
     }
 }

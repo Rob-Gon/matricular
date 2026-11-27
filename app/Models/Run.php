@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CountdownModes;
 use App\Enums\LetterSets;
 use Database\Factories\RunFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\DB;
  * @property LetterSets $letter_set
  * @property bool $ordered
  * @property string|null $countdown_time
+ * @property int|null $countdown_seconds
  * @property string|null $plate
  * @property Carbon|null $plate_dealt_at
  * @property Carbon|null $ends_at
@@ -53,6 +55,7 @@ class Run extends Model
         'letter_set',
         'ordered',
         'countdown_time',
+        'countdown_seconds',
         'plate',
         'plate_dealt_at',
         'ends_at',
@@ -142,10 +145,19 @@ class Run extends Model
     public function settingsLabels(): array
     {
         return [
-            $this->countdown_time ? "Contrarreloj, {$this->countdown_time}" : 'Sin límite',
+            match (true) {
+                $this->countdown_time === null => 'Sin límite',
+                $this->isCustomCountdown() => 'Contrarreloj personalizado, '.intdiv((int) $this->countdown_seconds, 60).' min',
+                default => "Contrarreloj, {$this->countdown_time}",
+            },
             $this->letter_set === LetterSets::SIMPLE ? 'Letras simples' : 'Todas las letras',
             $this->ordered ? 'En orden' : 'Cualquier orden',
         ];
+    }
+
+    public function isCustomCountdown(): bool
+    {
+        return $this->countdown_time === CountdownModes::PERSONALIZADO->value;
     }
 
     public function isOver(): bool

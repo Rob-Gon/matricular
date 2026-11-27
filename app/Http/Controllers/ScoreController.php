@@ -65,7 +65,14 @@ class ScoreController extends Controller
             ->when($filters['mode'] ?? null, fn (Builder $query, string $mode) => $query->where('runs.mode', $mode))
             ->when($filters['letter_set'] ?? null, fn (Builder $query, string $set) => $query->where('runs.letter_set', $set))
             ->when(isset($filters['ordered']) && $filters['ordered'] !== '', fn (Builder $query) => $query->where('runs.ordered', $filters['ordered'] === '1'))
-            ->when($filters['time'] ?? null, fn (Builder $query, string $time) => $query->where('runs.countdown_time', $time))
+            // Custom countdowns (up to an hour) only rank against each other, under their own filter.
+            ->when(
+                $filters['time'] ?? null,
+                fn (Builder $query, string $time) => $query->where('runs.countdown_time', $time),
+                fn (Builder $query) => $query->where(fn (Builder $query) => $query
+                    ->whereNull('runs.countdown_time')
+                    ->orWhere('runs.countdown_time', '!=', CountdownModes::PERSONALIZADO->value)),
+            )
             ->groupBy('users.id', 'users.name')
             ->orderBy('highest_score', 'desc')
             ->orderBy('users.name', 'asc')

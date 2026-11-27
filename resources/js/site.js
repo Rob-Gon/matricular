@@ -40,7 +40,16 @@ Alpine.data('gameSetup', (initial) => ({
     },
 
     get timeSummary() {
-        return this.isCountdown ? `Tienes ${this.time}.` : 'Sin reloj.';
+        if (!this.isCountdown) {
+            return 'Sin reloj.';
+        }
+
+        if (this.time === 'Personalizado') {
+            const minutes = Number(this.minutes) || 0;
+            return `Tienes ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}. Las partidas personalizadas tienen su propia clasificación y no cuentan para «Matriculando fuerte».`;
+        }
+
+        return `Tienes ${this.time}.`;
     },
 }));
 

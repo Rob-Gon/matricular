@@ -26,6 +26,9 @@
                 <input type="hidden" name="letter_set" value="{{ $run->letter_set->value }}">
                 <input type="hidden" name="ordered" value="{{ (int) $run->ordered }}">
                 <input type="hidden" name="countdown_time" value="{{ $run->countdown_time }}">
+                @if ($run->isCustomCountdown())
+                    <input type="hidden" name="custom_minutes" value="{{ intdiv((int) $run->countdown_seconds, 60) }}">
+                @endif
                 <button type="submit" class="btn btn-primary text-2xl">Otra partida</button>
             </form>
             <a class="btn text-2xl" href="{{ route('game.setup', ['mode' => $run->mode]) }}">Cambiar ajustes</a>
