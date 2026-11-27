@@ -1,4 +1,5 @@
-@props(['value' => 0, 'label' => 'puntos', 'scale' => 1])
+{{-- model: optional Alpine expression for a live value; the server-rendered value is the starting point. --}}
+@props(['value' => 0, 'label' => 'puntos', 'scale' => 1, 'model' => null])
 
 @php
     $text = str_pad((string) abs((int) $value), 5, '0', STR_PAD_LEFT);
@@ -6,9 +7,17 @@
 @endphp
 
 <div {{ $attributes->class('odometer') }} style="--odometer-scale: {{ $scale }}">
-    <div class="odometer-drum" role="img" aria-label="{{ $value }} {{ $label }}">
-        @foreach ($cells as $cell)
-            <span class="odometer-cell" aria-hidden="true">{{ $cell }}</span>
+    <div
+        class="odometer-drum"
+        role="img"
+        aria-label="{{ $value }} {{ $label }}"
+        @if ($model)
+            x-data="{ get cells() { const value = {{ $model }}; const text = String(Math.abs(value)).padStart(5, '0'); return value < 0 ? '-' + text.slice(1) : text; } }"
+            :aria-label="({{ $model }}) + ' {{ $label }}'"
+        @endif
+    >
+        @foreach ($cells as $index => $cell)
+            <span class="odometer-cell" aria-hidden="true" @if ($model) x-text="cells[{{ $index }}]" @endif>{{ $cell }}</span>
         @endforeach
     </div>
     <span class="odometer-label" aria-hidden="true">{{ $label }}</span>

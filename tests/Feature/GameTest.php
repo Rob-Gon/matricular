@@ -247,20 +247,55 @@ class GameTest extends TestCase
         Http::fake();
         $run = Run::factory()->create(['plate' => 'BRC']);
 
-        $this->actingAs($run->user)->postJson(route('game.end', $run))->assertOk();
+        $this->actingAs($run->user)->postJson(route('game.end', $run))
+            ->assertOk()
+            ->assertJsonPath('summary_url', route('game.summary', $run));
 
         $this->actingAs($run->user)->postJson(route('game.check-word', $run), ['word' => 'barco'])->assertStatus(409);
-        $this->actingAs($run->user)->get(route('game.show', $run))->assertRedirect(route('menu.view'));
+        $this->actingAs($run->user)->get(route('game.show', $run))->assertRedirect(route('game.summary', $run));
     }
 
-    public function test_the_game_page_renders_the_server_plate(): void
+    public function test_the_summary_waits_until_the_run_is_over(): void
     {
-        $run = Run::factory()->countdown()->create(['plate' => 'BRC']);
+        $run = Run::factory()->countdown()->create();
+
+        $this->actingAs($run->user)->get(route('game.summary', $run))->assertRedirect(route('game.show', $run));
+        $this->actingAs(User::factory()->create())->get(route('game.summary', $run))->assertForbidden();
+    }
+
+    public function test_the_summary_shows_the_trip_receipt(): void
+    {
+        $user = User::factory()->create();
+        Run::factory()->for($user)->create(['score' => 80, 'ended_at' => now()]);
+        $run = Run::factory()->for($user)->create([
+            'score' => 15,
+            'ended_at' => now(),
+            'words_correct' => ['BARCO', 'CARBURACION'],
+            'words_error' => ['BRCAZA'],
+            'chars_skipped' => [['M', 'T', 'R']],
+        ]);
+
+        $this->actingAs($run->user)->get(route('game.summary', $run))
+            ->assertOk()
+            ->assertSee('Fin del')
+            ->assertSeeInOrder(['Palabras acertadas', '2', 'Fallos', '1', 'Pasamatrículas', '1', 'La más larga', 'carburacion'])
+            ->assertSee('brcaza')
+            ->assertSee('Sin límite, Letras simples, Cualquier orden')
+            ->assertSee('Tu mejor marca: 80 puntos');
+    }
+
+    public function test_the_game_page_renders_the_server_plate_and_settings(): void
+    {
+        $run = Run::factory()->countdown()->settings(LetterSets::FULL, ordered: true)->create(['plate' => 'BRC']);
 
         $this->actingAs($run->user)->get(route('game.show', $run))
             ->assertOk()
-            ->assertSeeInOrder(['B', 'R', 'C'])
-            ->assertSee(route('game.check-word', $run));
+            ->assertSee('x-text="plate" >BRC</span>', false)
+            ->assertSee('Contrarreloj, 1 minuto')
+            ->assertSee('Todas las letras')
+            ->assertSee('En orden')
+            ->assertSee('Pasamatrícula')
+            ->assertDontSee('Terminar partida');
     }
 
     public function test_deleting_an_account_also_deletes_its_runs(): void

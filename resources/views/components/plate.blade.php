@@ -1,9 +1,11 @@
-@props(['letters', 'digits' => null, 'scale' => 1, 'drop' => false])
+{{-- letters-model / digits-model: optional Alpine expressions that keep the plate in sync with client state. --}}
+@props(['letters', 'digits' => null, 'scale' => 1, 'drop' => false, 'lettersModel' => null, 'digitsModel' => null])
 
 <div
     {{ $attributes->class(['plate', 'animate-plate-drop' => $drop]) }}
     role="img"
     aria-label="Matrícula {{ trim($digits.' '.$letters) }}"
+    @if ($lettersModel) :aria-label="'Matrícula ' + {{ $digitsModel ?? "''" }} + ' ' + {{ $lettersModel }}" @endif
     style="--plate-scale: {{ $scale }}"
 >
     <span class="plate-band" aria-hidden="true">
@@ -15,9 +17,9 @@
         <span class="plate-country">E</span>
     </span>
     <span class="plate-text" aria-hidden="true">
-        @if ($digits)
-            <span class="plate-digits">{{ $digits }}</span>
+        @if ($digits || $digitsModel)
+            <span class="plate-digits" @if ($digitsModel) x-text="{{ $digitsModel }}" @endif>{{ $digits }}</span>
         @endif
-        <span class="plate-letters">{{ $letters }}</span>
+        <span class="plate-letters" @if ($lettersModel) x-text="{{ $lettersModel }}" @endif>{{ $letters }}</span>
     </span>
 </div>

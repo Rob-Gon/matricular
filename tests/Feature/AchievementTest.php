@@ -104,6 +104,19 @@ class AchievementTest extends TestCase
         $this->actingAs($played->user)->postJson(route('game.end', $played))->assertJsonPath('achievements', []);
     }
 
+    public function test_the_summary_closes_a_countdown_that_ran_out_with_the_tab_closed(): void
+    {
+        $run = Run::factory()->countdown()->create(['words_error' => ['BRCX'], 'ends_at' => now()->subMinute()]);
+
+        $this->actingAs($run->user)->get(route('game.summary', $run))
+            ->assertOk()
+            ->assertSee('Logros de esta partida')
+            ->assertSee(Achievement::where('key', 'first_game')->value('name'));
+
+        $this->assertNotNull($run->fresh()->ended_at);
+        $this->assertSame(['first_game'], $this->unlockedKeys($run->user));
+    }
+
     public function test_five_games_in_ten_minutes(): void
     {
         $user = User::factory()->create();

@@ -116,6 +116,20 @@ class Run extends Model
         });
     }
 
+    /**
+     * The run's settings as short Spanish labels for the game and summary screens.
+     *
+     * @return list<string>
+     */
+    public function settingsLabels(): array
+    {
+        return [
+            $this->countdown_time ? "Contrarreloj, {$this->countdown_time}" : 'Sin límite',
+            $this->letter_set === LetterSets::SIMPLE ? 'Letras simples' : 'Todas las letras',
+            $this->ordered ? 'En orden' : 'Cualquier orden',
+        ];
+    }
+
     public function isOver(): bool
     {
         if ($this->ended_at !== null) {

@@ -1,4 +1,4 @@
-@props(['letters', 'digits' => null, 'drop' => false])
+@props(['letters', 'digits' => null, 'drop' => false, 'lettersModel' => null, 'digitsModel' => null, 'plateRef' => null])
 
 <div {{ $attributes->class('car') }}>
     <svg class="animate-ink-boil" viewBox="0 0 800 520" aria-hidden="true">
@@ -25,6 +25,6 @@
         <path d="M92 424 L330 424" fill="none" stroke="#FBF8EF" stroke-width="6" stroke-linecap="round" />
     </svg>
     <div class="car-plate">
-        <x-plate :letters="$letters" :digits="$digits" :drop="$drop" />
+        <x-plate :letters="$letters" :digits="$digits" :drop="$drop" :letters-model="$lettersModel" :digits-model="$digitsModel" :x-ref="$plateRef" />
     </div>
 </div>

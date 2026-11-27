@@ -1,4 +1,7 @@
 import Alpine from 'alpinejs';
+import game from './game';
+
+Alpine.data('game', game);
 
 // Live summary of the "Prepara el viaje" settings form.
 Alpine.data('gameSetup', (initial) => ({
