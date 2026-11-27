@@ -59,6 +59,14 @@
                 </ul>
             </section>
 
+            <section aria-labelledby="teclado" class="paper flex flex-col gap-4 p-7">
+                <h2 id="teclado" class="font-display text-3xl">Con teclado</h2>
+                <ul class="flex list-disc flex-col gap-2 pl-6 text-xl">
+                    <li><strong>Intro</strong> comprueba la palabra que has escrito.</li>
+                    <li><strong>Shift</strong>, pulsada sola y sin otra tecla, hace Pasamatrícula. Escribir una mayúscula con Shift no cuenta.</li>
+                </ul>
+            </section>
+
             <div class="flex flex-wrap items-center gap-7">
                 @auth
                     <a class="btn btn-primary" href="{{ route('menu.view') }}">Jugar</a>

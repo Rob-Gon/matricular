@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/', 'start')->name('start');
         Route::get('/setup', 'setup')->name('setup');
         Route::get('/{run}', 'show')->whereNumber('run')->name('show');
+        Route::get('/{run}/summary', 'summary')->whereNumber('run')->name('summary');
 
         Route::middleware('throttle:game')->whereNumber('run')->group(function () {
             Route::post('/{run}/words', 'checkWord')->name('check-word');

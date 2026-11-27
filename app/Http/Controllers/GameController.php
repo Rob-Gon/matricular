@@ -49,12 +49,11 @@ class GameController extends Controller
         Gate::authorize('play', $run);
 
         if ($run->isOver()) {
-            return redirect()->route('menu.view')->with('error', 'La partida ha terminado.');
+            return redirect()->route('game.summary', $run);
         }
 
         return view('main.game', [
             'run' => $run,
-            'mode' => $run->mode,
             'countdownTotal' => $run->countdown_time ? CountdownModes::from($run->countdown_time)->seconds() : null,
             'countdownRemaining' => $run->remainingSeconds(),
         ]);
@@ -103,7 +102,7 @@ class GameController extends Controller
 
             return $this->gameResponse($run, [
                 'success' => false,
-                'message' => '¡Imposible! La matrícula ha cambiado. Has perdido '.Run::POINTS_PENALTY.' puntos.',
+                'message' => 'Pasamatrícula. Has perdido '.Run::POINTS_PENALTY.' puntos.',
             ]);
         });
     }
@@ -115,6 +114,48 @@ class GameController extends Controller
     {
         Gate::authorize('play', $run);
 
+        $this->finish($run, $achievements);
+
+        return $this->gameResponse($run, [
+            'success' => true,
+            'message' => 'Partida terminada.',
+            'game_over' => true,
+            'summary_url' => route('game.summary', $run),
+        ], 200, $achievements->unlocked());
+    }
+
+    /**
+     * "Fin del trayecto": the receipt of a finished run.
+     */
+    public function summary(Run $run, AchievementUnlocker $achievements): View|RedirectResponse
+    {
+        Gate::authorize('play', $run);
+
+        if (! $run->isOver()) {
+            return redirect()->route('game.show', $run);
+        }
+
+        // A countdown that ran out with the tab closed never called end(); close it now.
+        $this->finish($run, $achievements);
+
+        $words = array_map(mb_strtolower(...), $run->words_correct ?? []);
+
+        return view('main.summary', [
+            'run' => $run,
+            'words' => $words,
+            'rejected' => array_map(mb_strtolower(...), $run->words_error ?? []),
+            'skips' => count($run->chars_skipped ?? []),
+            'longest' => collect($words)->sortByDesc(fn (string $word) => mb_strlen($word))->first(),
+            'best' => (int) $run->user->runs()->max('score'),
+            'achievements' => $run->user->achievements()->wherePivot('run_id', $run->id)->orderBy('sort')->get(),
+        ]);
+    }
+
+    /**
+     * Marks the run as ended once and evaluates the run achievements.
+     */
+    private function finish(Run $run, AchievementUnlocker $achievements): void
+    {
         $justEnded = $run->withLock(function () use ($run): bool {
             if ($run->ended_at !== null) {
                 return false;
@@ -126,17 +167,13 @@ class GameController extends Controller
             return true;
         });
 
-        // shortcut: a countdown that expires with the tab closed never calls this endpoint, so its run
-        // achievements are skipped; check them when an expired run is first read if that matters.
         if ($justEnded) {
             $achievements->afterRun($run);
         }
-
-        return $this->gameResponse($run, ['success' => true, 'message' => 'Partida terminada.', 'game_over' => true], 200, $achievements->unlocked());
     }
 
     /**
-     * @param  array{success: bool, message: string, game_over?: bool, word?: string}  $result
+     * @param  array{success: bool, message: string, game_over?: bool, word?: string, summary_url?: string}  $result
      * @param  list<array{key: string, name: string, description: string, icon: string}>  $achievements  Unlocked by this request
      */
     private function gameResponse(Run $run, array $result, int $status = 200, array $achievements = []): JsonResponse
