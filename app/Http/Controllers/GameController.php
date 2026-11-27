@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Achievements\WordPlay;
 use App\Actions\SubmitWord;
-use App\Enums\CountdownModes;
 use App\Enums\GameModes;
 use App\Http\Requests\StartGameRequest;
 use App\Http\Requests\SubmitWordRequest;
@@ -27,6 +26,7 @@ class GameController extends Controller
     public function start(StartGameRequest $request, PlateGenerator $plates): RedirectResponse
     {
         $countdown = $request->countdown();
+        $seconds = $request->countdownSeconds();
 
         $run = Run::create([
             'user_id' => $request->user()->id,
@@ -35,9 +35,10 @@ class GameController extends Controller
             'letter_set' => $request->letterSet(),
             'ordered' => $request->ordered(),
             'countdown_time' => $countdown?->value,
+            'countdown_seconds' => $seconds,
             'plate' => $plates->generate($request->letterSet(), $request->ordered()),
             'plate_dealt_at' => now(),
-            'ends_at' => $countdown ? now()->addSeconds($countdown->seconds()) : null,
+            'ends_at' => $seconds ? now()->addSeconds($seconds) : null,
         ]);
 
         return redirect()->route('game.show', $run);
@@ -56,7 +57,7 @@ class GameController extends Controller
 
         return view('main.game', [
             'run' => $run,
-            'countdownTotal' => $run->countdown_time ? CountdownModes::from($run->countdown_time)->seconds() : null,
+            'countdownTotal' => $run->countdown_seconds,
             'countdownRemaining' => $run->remainingSeconds(),
         ]);
     }

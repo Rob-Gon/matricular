@@ -29,7 +29,7 @@
                         </svg>
                         <span class="flex flex-col gap-1.5">
                             <span class="font-display text-2xl sm:text-3xl">Contrarreloj</span>
-                            <span class="text-xl">Todas las palabras que puedas antes de que se acabe la gasolina: de 30 segundos a 5 minutos.</span>
+                            <span class="text-xl">Todas las palabras que puedas antes de que se acabe la gasolina: de 30 segundos a una hora.</span>
                         </span>
                     </a>
                 </li>

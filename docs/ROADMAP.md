@@ -125,7 +125,7 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 - [x] Run achievements for countdowns that expire with the tab closed (done in F3: the summary closes the run)
 
 ### PR 2 · `feat/custom-countdown`
-- [ ] Custom countdown from 1 to 60 minutes; not eligible for "Matriculando fuerte"; rankings show it only under its own "Personalizado" duration filter
+- [x] Custom countdown from 1 to 60 minutes (`CountdownModes::PERSONALIZADO`, length in the new `runs.countdown_seconds`; `countdown_time` is now a string instead of a MySQL enum); not eligible for "Matriculando fuerte"; rankings show it only under its own "Personalizado" duration filter
 
 ### PR 3 · `feat/achievement-stickers`
 - [ ] A sticker per achievement (icon artwork by `icon` key); platinum with a light halo, animation and platinum colour

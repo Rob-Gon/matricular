@@ -9,6 +9,7 @@
         'ordered' => '0',
         'mode' => $mode->value,
         'time' => CountdownModes::UN_MINUTO->value,
+        'minutes' => 10,
     ];
 @endphp
 
@@ -57,6 +58,20 @@
                         @foreach (CountdownModes::cases() as $countdown)
                             <x-option variant="chip" name="countdown_time" :value="$countdown->value" model="time" :checked="$initial['time'] === $countdown->value" :label="$countdown->shortLabel()" />
                         @endforeach
+                        <label class="flex items-center gap-3 text-xl font-bold" x-show="time === @js(CountdownModes::PERSONALIZADO->value)" x-cloak>
+                            <input
+                                type="number"
+                                name="custom_minutes"
+                                min="1"
+                                max="{{ CountdownModes::MAX_CUSTOM_MINUTES }}"
+                                step="1"
+                                inputmode="numeric"
+                                class="field-input w-24! text-center"
+                                x-model.number="minutes"
+                                :required="isCountdown && time === @js(CountdownModes::PERSONALIZADO->value)"
+                            >
+                            minutos (máximo {{ CountdownModes::MAX_CUSTOM_MINUTES }})
+                        </label>
                     </fieldset>
                 </div>
 

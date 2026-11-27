@@ -55,6 +55,7 @@
                 <h2 id="modos" class="font-display text-3xl">Modos</h2>
                 <ul class="flex list-disc flex-col gap-2 pl-6 text-xl">
                     <li><strong>Contrarreloj:</strong> 30 segundos, o de 1 a 5 minutos. La aguja de la gasolina marca el tiempo que queda.</li>
+                    <li><strong>Contrarreloj personalizado:</strong> elige tú los minutos, hasta una hora. Tiene su propia clasificación y no cuenta para el logro de los 500 puntos.</li>
                     <li><strong>Sin límite:</strong> juega a tu ritmo y termina cuando quieras.</li>
                 </ul>
             </section>

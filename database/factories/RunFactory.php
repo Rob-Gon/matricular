@@ -58,7 +58,18 @@ class RunFactory extends Factory
         return $this->state(fn () => [
             'mode' => GameModes::CONTRARELOJ->value,
             'countdown_time' => $countdown->value,
-            'ends_at' => now()->addSeconds($countdown->seconds()),
+            'countdown_seconds' => $countdown->seconds(),
+            'ends_at' => now()->addSeconds((int) $countdown->seconds()),
+        ]);
+    }
+
+    public function customCountdown(int $minutes): static
+    {
+        return $this->state(fn () => [
+            'mode' => GameModes::CONTRARELOJ->value,
+            'countdown_time' => CountdownModes::PERSONALIZADO->value,
+            'countdown_seconds' => $minutes * 60,
+            'ends_at' => now()->addMinutes($minutes),
         ]);
     }
 

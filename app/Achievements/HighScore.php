@@ -10,7 +10,7 @@ class HighScore implements WordAchievement
 
     public function isUnlockedByWord(WordPlay $play): bool
     {
-        // Only countdowns: an infinite run reaches any score given time.
-        return $play->run->countdown_time !== null && $play->run->score >= self::SCORE;
+        // Only preset countdowns: infinite and custom runs reach any score given time.
+        return $play->run->countdown_time !== null && ! $play->run->isCustomCountdown() && $play->run->score >= self::SCORE;
     }
 }
