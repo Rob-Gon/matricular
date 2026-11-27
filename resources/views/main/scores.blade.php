@@ -109,12 +109,12 @@
                             <tbody>
                                 @foreach ($recentRuns as $run)
                                     <tr class="border-b-2 border-ink/20">
-                                        <td class="py-2.5 pr-4 whitespace-nowrap">{{ $run->created_at->format('d/m/Y, H:i') }}</td>
+                                        <td class="py-2.5 pr-4 whitespace-nowrap"><x-local-time :value="$run->created_at" /></td>
                                         <td class="py-2.5 pr-4">{{ implode(', ', $run->settingsLabels()) }}</td>
                                         <td class="py-2.5 pr-4 text-right font-black tabular-nums">{{ $run->score }}</td>
                                         <td class="py-2.5 text-right">
                                             @if ($run->isOver())
-                                                <a class="font-bold underline" href="{{ route('game.summary', $run) }}">Ver tique<span class="sr-only"> de la partida del {{ $run->created_at->format('d/m/Y, H:i') }}</span></a>
+                                                <a class="font-bold underline" href="{{ route('game.summary', $run) }}">Ver tique<span class="sr-only"> de la partida del <x-local-time :value="$run->created_at" /></span></a>
                                             @else
                                                 <a class="font-bold underline" href="{{ route('game.show', $run) }}">Seguir</a>
                                             @endif

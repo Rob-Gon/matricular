@@ -7,6 +7,7 @@ use App\Enums\LetterSets;
 use App\Models\Run;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ScoreTest extends TestCase
@@ -75,5 +76,15 @@ class ScoreTest extends TestCase
             ->assertSee('1 partida jugada')
             ->assertSee(route('game.setup', ['mode' => 'Contrareloj']), false)
             ->assertSee(route('game.setup', ['mode' => 'Infinito']), false);
+    }
+
+    public function test_dates_are_sent_in_utc_for_the_browser_to_localize(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-27 12:24:00', 'UTC'));
+        $run = Run::factory()->create(['words_correct' => ['BARCO']]);
+
+        $this->actingAs($run->user)->get(route('scores.view'))
+            ->assertSee('datetime="2026-11-27T12:24:00Z"', false)
+            ->assertSee('27/11/2026, 12:24 UTC');
     }
 }
