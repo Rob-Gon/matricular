@@ -8,9 +8,9 @@ use App\Enums\GameModes;
 use App\Http\Requests\StartGameRequest;
 use App\Http\Requests\SubmitWordRequest;
 use App\Models\Run;
-use App\Models\RunWord;
 use App\Services\AchievementUnlocker;
 use App\Services\PlateGenerator;
+use App\Services\TripReport;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -127,7 +127,7 @@ class GameController extends Controller
     /**
      * "Fin del trayecto": the receipt of a finished run.
      */
-    public function summary(Run $run, AchievementUnlocker $achievements): View|RedirectResponse
+    public function summary(Run $run, AchievementUnlocker $achievements, TripReport $report): View|RedirectResponse
     {
         Gate::authorize('play', $run);
 
@@ -138,18 +138,9 @@ class GameController extends Controller
         // A countdown that ran out with the tab closed never called end(); close it now.
         $this->finish($run, $achievements);
 
-        $attempts = $run->runWords()->orderBy('id')->get();
-        $valid = $attempts->where('valid', true);
-        $fastest = $valid->whereNotNull('elapsed_ms')->sortBy('elapsed_ms')->first();
-
         return view('main.summary', [
             'run' => $run,
-            'words' => $valid->map->display()->values()->all(),
-            'rejected' => $attempts->where('kind', RunWord::KIND_WORD)->where('valid', false)
-                ->where('reason', '!=', RunWord::REASON_REPEATED)->map->display()->values()->all(),
-            'skips' => $attempts->where('kind', RunWord::KIND_SKIP)->count(),
-            'longest' => $valid->map->display()->sortByDesc(fn (string $word) => mb_strlen($word))->first(),
-            'fastest' => $fastest,
+            'report' => $report->build($run),
             'best' => (int) $run->user->runs()->max('score'),
             'achievements' => $run->user->achievements()->wherePivot('run_id', $run->id)->orderBy('sort')->get(),
         ]);

@@ -111,7 +111,8 @@ Done 2026-11-27 in five PRs plus follow-ups (skip key, desktop road in perspecti
 - [x] Stop writing and drop `runs.words_correct`, `words_error`, `chars_skipped` (separate deploy, so the previous code keeps working during PR 1's rollout; rollback rebuilds them from `run_words`); `RunFactory::attempts()` state for tests
 
 ### PR 3 · `feat/trip-stats`
-- [ ] End-of-game stats: rejection reasons, accuracy, average answer time, "words you could have made" per plate (`plates` + `words`)
+- [x] Trip receipt (`App\Services\TripReport`): accuracy (repeated words excluded), average time per correct word, rejection reasons, plate by plate with answer times, fastest/longest tags and "también valían" (first five plates, the rest folded)
+- [x] Suggestions: `dictionary:plates` keeps the six shortest headwords per plate (`plates.examples` / `examples_ordered`); only words that are their own lemma and appear in Wiktionary, which drops conjugations, abbreviations and rare spellings. The owner chose "shortest" over a word-frequency list
 
 ## F5 – Achievements (foundation done in F1 · PR 4)
 - [ ] Review and redefine the achievement list with the user

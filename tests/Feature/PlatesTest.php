@@ -45,6 +45,23 @@ class PlatesTest extends TestCase
         $this->assertEquals(['simple' => 0, 'solutions' => 0, 'solutions_ordered' => 0], $this->plate('XYZ'));
     }
 
+    public function test_it_keeps_the_shortest_headwords_as_examples(): void
+    {
+        $this->addWords(['barco', 'cabra', 'bracero', 'abrochar', 'brcx']);
+        // A conjugation (not a headword) and a word Wiktionary does not list are never suggested.
+        DB::table('words')->insert(['key' => 'ABROCHA', 'form' => 'abrocha', 'lemma' => 'abrochar', 'source' => 'rla-es']);
+        DB::table('word_categories')->insert(array_map(
+            fn (string $word) => ['word' => $word, 'pos' => 'noun', 'source' => 'test'],
+            ['barco', 'cabra', 'bracero', 'abrochar'],
+        ));
+
+        $this->artisan('dictionary:plates')->assertSuccessful();
+
+        $examples = DB::table('plates')->where('plate', 'BRC')->first(['examples', 'examples_ordered']);
+        $this->assertSame(['BARCO', 'CABRA', 'BRACERO', 'ABROCHAR'], json_decode($examples->examples));
+        $this->assertSame(['BARCO', 'BRACERO', 'ABROCHAR'], json_decode($examples->examples_ordered));
+    }
+
     public function test_repeated_plate_letters_need_repeated_word_letters(): void
     {
         $this->addWords(['sesos', 'seso']);
