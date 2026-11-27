@@ -37,8 +37,8 @@ class RaceManager
             $players = $lobby->players()->get();
 
             $problem = match (true) {
-                $lobby->status !== Lobby::STATUS_WAITING => 'La carrera ya ha empezado.',
-                $lobby->format !== LobbyFormats::RACE => 'Ese formato todavía no se puede jugar. Elige «Carrera» en las reglas.',
+                $lobby->status !== Lobby::STATUS_WAITING => 'La partida ya ha empezado.',
+                $lobby->format === LobbyFormats::FIRST => 'Ese formato todavía no se puede jugar. Elige «Carrera» o «Rondas» en las reglas.',
                 $players->count() < self::MIN_PLAYERS => 'Hacen falta al menos '.self::MIN_PLAYERS.' jugadores.',
                 $players->contains('ready', false) => 'Todos tienen que estar listos.',
                 default => null,
@@ -53,13 +53,17 @@ class RaceManager
             $ordered = (bool) $settings['ordered'];
             // Whole seconds, like the runs' end times.
             $startsAt = now()->startOfSecond()->addSeconds(LobbyMatch::LIGHTS_SECONDS + 1);
-            $endsAt = $startsAt->copy()->addSeconds((int) $settings['countdown_seconds']);
+            $rounds = $lobby->format === LobbyFormats::ROUNDS;
+            // Rounds follow each other without a break, so the match lasts every round back to back.
+            $seconds = $rounds ? (int) $settings['rounds'] * (int) $settings['round_seconds'] : (int) $settings['countdown_seconds'];
+            $endsAt = $startsAt->copy()->addSeconds($seconds);
 
             $match = LobbyMatch::create([
                 'lobby_id' => $lobby->id,
                 'format' => $lobby->format,
                 'settings' => $settings,
-                'plates' => $this->sequence($letterSet, $ordered),
+                // One plate per round, never repeated, so "said in this round" is "said on this plate".
+                'plates' => $rounds ? $this->sequence($letterSet, $ordered, (int) $settings['rounds'], distinct: true) : $this->sequence($letterSet, $ordered),
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
             ]);
@@ -72,8 +76,8 @@ class RaceManager
                     'mode' => GameModes::CONTRARELOJ->value,
                     'letter_set' => $letterSet,
                     'ordered' => $ordered,
-                    'countdown_time' => $settings['countdown_time'],
-                    'countdown_seconds' => $settings['countdown_seconds'],
+                    'countdown_time' => $rounds ? null : $settings['countdown_time'],
+                    'countdown_seconds' => $seconds,
                     'plate' => $match->plateAt(0),
                     'plate_number' => 0,
                     // Answer times count from the green light.
@@ -242,15 +246,15 @@ class RaceManager
     /**
      * @return list<string>
      */
-    private function sequence(LetterSets $letterSet, bool $ordered): array
+    private function sequence(LetterSets $letterSet, bool $ordered, int $length = LobbyMatch::SEQUENCE_LENGTH, bool $distinct = false): array
     {
         $plates = [];
 
-        while (count($plates) < LobbyMatch::SEQUENCE_LENGTH) {
+        while (count($plates) < $length) {
             $plate = $this->plates->generate($letterSet, $ordered);
 
-            // Never the same plate twice in a row.
-            if ($plate !== end($plates)) {
+            // Never the same plate twice in a row, or at all when $distinct.
+            if ($distinct ? ! in_array($plate, $plates, true) : $plate !== end($plates)) {
                 $plates[] = $plate;
             }
         }

@@ -5,12 +5,14 @@
     $race ??= null;
     $digits = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
     $config = [
-        'plate' => $run->plate,
+        'plate' => $race['plate'] ?? $run->plate,
         'digits' => $digits,
         'score' => $run->score,
         'remaining' => $countdownRemaining,
         'total' => $countdownTotal,
         'startsInMs' => $race['startsInMs'] ?? 0,
+        'canSkip' => $race['canSkip'] ?? true,
+        'rounds' => $race['rounds'] ?? null,
         'csrf' => csrf_token(),
         'urls' => $race['urls'] ?? [
             'word' => route('game.check-word', $run),
@@ -22,7 +24,7 @@
 @endphp
 
 {{-- No site header: the game fills the screen, so the word box and its buttons fit on desktop. --}}
-<x-layouts.app :title="$race ? 'Carrera' : 'Partida'" description="Partida en curso de Matricular." noindex :header="false">
+<x-layouts.app :title="$race['title'] ?? 'Partida'" description="Partida en curso de Matricular." noindex :header="false">
     @if ($race)
         <div x-data="race(@js($race))" class="contents">
         @include('main.partials.race-lights')
@@ -34,7 +36,7 @@
         @pointerdown.window="onPointerdown()"
         class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-dvh xl:gap-5 xl:pb-6"
     >
-        <h1 class="sr-only">{{ $race ? 'Carrera' : 'Partida' }}</h1>
+        <h1 class="sr-only">{{ $race['title'] ?? 'Partida' }}</h1>
 
         {{-- Desktop only: the car drives on a road to the horizon. Smaller screens keep the flat road band. --}}
         <x-road-scene class="absolute inset-0 -z-10 hidden size-full xl:block" />
@@ -45,9 +47,9 @@
             </div>
             <ul aria-label="Ajustes de esta partida" class="order-last flex w-full flex-wrap justify-center gap-2 sm:order-none sm:w-auto sm:gap-2.5">
                 @if ($race)
-                    <li class="rounded-full border-[3px] border-ink bg-mustard px-3 py-1 text-base font-black text-ink sm:px-4 sm:py-2 sm:text-xl" x-text="progress"></li>
+                    <li class="rounded-full border-[3px] border-ink bg-mustard px-3 py-1 text-base font-black text-ink sm:px-4 sm:py-2 sm:text-xl" x-text="rounds ? `Ronda ${round + 1} de ${rounds}` : progress"></li>
                 @endif
-                @foreach ($run->settingsLabels() as $setting)
+                @foreach ($race['labels'] ?? $run->settingsLabels() as $setting)
                     <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 xl:bg-enamel text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
                 @endforeach
             </ul>
@@ -67,7 +69,7 @@
             <div class="relative w-full max-w-[600px] xl:col-start-2">
                 <div class="road absolute bottom-[5%] left-1/2 h-[16.5%]! w-[200vw] -translate-x-1/2 xl:hidden" aria-hidden="true"></div>
                 <x-car
-                    :letters="$run->plate"
+                    :letters="$race['plate'] ?? $run->plate"
                     :digits="$digits"
                     drop
                     letters-model="plate"
@@ -117,9 +119,11 @@
                 </button>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over || waiting">
-                    Pasamatrícula (−{{ Run::POINTS_PENALTY }}) <span class="kbd max-sm:hidden" aria-hidden="true" x-text="skipKeyLabel">Ctrl</span>
-                </button>
+                @if ($race['canSkip'] ?? true)
+                    <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over || waiting">
+                        Pasamatrícula (−{{ Run::POINTS_PENALTY }}) <span class="kbd max-sm:hidden" aria-hidden="true" x-text="skipKeyLabel">Ctrl</span>
+                    </button>
+                @endif
                 @if (! $countdownTotal)
                     <button type="button" class="btn btn-danger" @click="$refs.confirmEnd.showModal()" :disabled="over">Terminar partida</button>
                 @endif

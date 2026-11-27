@@ -51,12 +51,12 @@ export default (config) => ({
 
     // The server checks the same conditions; this only enables the button and explains why it waits.
     get canStart() {
-        return this.state.format === 'race' && this.state.players.length >= MIN_PLAYERS && this.waitingFor.length === 0;
+        return this.state.format !== 'first' && this.state.players.length >= MIN_PLAYERS && this.waitingFor.length === 0;
     },
 
     get startHint() {
-        if (this.state.format !== 'race') {
-            return 'Por ahora solo se puede jugar la Carrera: «Rondas» y «El primero gana» llegan pronto.';
+        if (this.state.format === 'first') {
+            return '«El primero gana» llega pronto: por ahora elige «Carrera» o «Rondas».';
         }
 
         if (this.state.players.length < MIN_PLAYERS) {

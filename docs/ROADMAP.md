@@ -150,7 +150,8 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 ### PR 2b · `feat/race-tiebreak`
 - [x] `tie_resolution = tiebreak`: players tied on a podium position play one extra plate on the results page (3 s countdown, 30 s to answer); the first valid word wins it, the others move one position down; nobody in time means they keep sharing it. Several ties are played one after another; the lobby returns to the grid when none is left
 ### PR 3 · `feat/shared-rounds`
-- [ ] Rounds (1–30) of up to 5 min, words already used by others in the round score 0
+- [x] Rounds (1–30) of 10–300 s back to back, one distinct plate per round for everyone; valid words keep the plate; a word another player already scored in the round scores 0 (`taken`, decided under the match lock); no "Pasamatrícula"; a word sent just before the plate changes still answers its round (2 s grace)
+- [x] Plates are never in the page before their time: the first one (race and rounds) and each new round's come from `POST /lobbies/{code}/race/sync`, which refuses before the start; the tiebreak plate is rendered only once the tiebreak has started
 ### PR 4 · `feat/first-wins`
 - [ ] First valid answer takes the plate (1–50 plates), tie window, per-plate limit, plate passes when everyone failed
 ### PR 5 · `feat/lobby-reactions`

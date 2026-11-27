@@ -67,8 +67,24 @@ class SubmitWord
             }
 
             $form = $verdict['form'];
+            $match = $run->lobbyMatch;
+
+            // "Rounds": everyone shares the round's plate, and a word only scores for whoever said it first.
+            // The caller holds the match lock, so two players cannot both score the same word.
+            if ($match?->isRounds()) {
+                $owner = $match->wordTakenBy((string) $run->plate, $word, $run->id);
+
+                if ($owner !== null) {
+                    $attempt = $run->addTakenWord($word, $input, $form);
+
+                    return ['success' => false, 'message' => '«'.$attempt->display()."» ya la dijo {$owner} en esta ronda: no suma.", 'attempt' => $attempt];
+                }
+            }
+
             $attempt = $run->addCorrectWord($word, $input, $form, $this->dictionary->categories($word));
-            $run->dealPlate($run->nextPlate($this->plates));
+            if (! $match?->isRounds()) {
+                $run->dealPlate($run->nextPlate($this->plates));
+            }
             $run->save();
 
             return ['success' => true, 'message' => '¡Palabra válida! Has ganado '.Run::POINTS_CORRECT.' puntos.', 'attempt' => $attempt];

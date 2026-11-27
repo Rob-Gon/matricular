@@ -4,10 +4,10 @@
     $ordinal = fn (int $position) => $position.(in_array($position, [1, 3], true) ? '.er' : '.º');
     // Podium order on screen: 2nd, 1st, 3rd.
     $steps = [1 => ['h-36', 'bg-[#D9DBE1]'], 0 => ['h-52', 'bg-mustard'], 2 => ['h-28', 'bg-[#C98A5A]']];
-    $settings = implode(', ', $run->settingsLabels());
+    $settings = implode(', ', $match->labels());
 @endphp
 
-<x-layouts.app title="Resultados de la carrera" description="Resultados de una carrera de Matricular." noindex>
+<x-layouts.app title="Resultados de la partida" description="Resultados de una partida multijugador de Matricular." noindex>
     <div x-data="raceResults(@js($config))">
         <section aria-labelledby="meta" class="flex flex-col items-center gap-7 px-6 pt-6 pb-0">
             <div class="flex items-center gap-4">
@@ -38,7 +38,9 @@
                         Empate por el {{ $ordinal($tiebreak->position) }} puesto: {{ collect($tiedNames)->join(', ', ' y ') }} juegan una matrícula de desempate.
                     </p>
                     <p x-show="!tiebreakOn" class="title-ink text-5xl" x-text="tiebreakCountdown"></p>
-                    <div x-show="tiebreakOn" x-cloak class="flex flex-col items-center gap-4">
+                    {{-- The plate is only in the page once the tiebreak has started: the page reloads at the start. --}}
+                    @if (! $tiebreak->starts_at->isFuture())
+                    <div class="flex flex-col items-center gap-4">
                         <x-plate :letters="$tiebreak->plate" :digits="str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT)" scale="0.8" />
                         <p class="text-xl font-bold"><span x-text="tiebreakSeconds"></span> s para acertar. Gana la primera palabra válida.</p>
                         @if ($tiebreak->includes(auth()->user()))
@@ -52,6 +54,7 @@
                             <p class="text-xl font-bold">Mira quién acierta primero.</p>
                         @endif
                     </div>
+                    @endif
                 </div>
             @endif
 
