@@ -14,15 +14,21 @@
                         @php
                             $owned = $unlocked->get($achievement->id);
                             $concealed = $achievement->hidden && ! $owned;
+                            // The platinum card goes dark so its halo of light shows.
+                            $platinum = $owned && $achievement->key === 'platinum';
                         @endphp
-                        <li @class(['paper flex h-full min-w-0 items-center gap-4 p-5 sm:gap-5 sm:p-6', 'bg-celluloid! shadow-none!' => ! $owned])>
-                            <x-sticker :locked="! $owned" :tilt="$loop->odd ? -8 : 6" class="{{ $owned ? '' : 'text-muted' }}" />
+                        <li @class([
+                            'paper flex h-full min-w-0 items-center gap-4 p-5 sm:gap-5 sm:p-6',
+                            'bg-celluloid! shadow-none!' => ! $owned,
+                            'bg-ink! text-enamel!' => $platinum,
+                        ])>
+                            <x-sticker :icon="$achievement->icon" :locked="! $owned" :tilt="$loop->odd ? -8 : 6" class="{{ $owned ? '' : 'text-muted' }}" />
                             <div class="flex min-w-0 flex-col gap-1">
                                 <h2 class="font-display text-xl break-words hyphens-auto">
                                     <span class="sr-only">{{ $owned ? 'Desbloqueado:' : 'Bloqueado:' }}</span>
                                     {{ $concealed ? '???' : $achievement->name }}
                                 </h2>
-                                <p class="text-lg leading-snug">
+                                <p class="text-lg leading-snug [overflow-wrap:anywhere]">
                                     {{ $concealed ? 'Logro oculto. Sigue jugando para descubrirlo.' : $achievement->description }}
                                 </p>
                                 @if ($owned)
