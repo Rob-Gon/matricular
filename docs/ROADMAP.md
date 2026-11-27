@@ -55,11 +55,13 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] `phpstan-baseline.neon` removed (zero legacy errors)
 
 ## F2 – Local dictionary
-- [ ] Verify licenses (Wiktionary/kaikki CC BY-SA, Hunspell es_ES)
-- [ ] `words` table + import command (form, key, lemma, pos, length, source)
-- [ ] `WordValidator` service: local lookup → rae-api fallback with cache
-- [ ] `plates` table with solution counts; generator only picks solvable plates
-- [ ] Benchmark validation latency (p95)
+- [x] Licenses: RLA-ES is GPL 3+/LGPL 3+/MPL 1.1+ (choose one); Wiktionary content is CC BY-SA (kaikki.org publishes no separate license)
+- [x] PR 1 `feat/dictionary-import`: `words` table (key, form, lemma, pos, source) + `dictionary:import` with a PHP Hunspell expander
+  - 612,645 forms from 56,901 lemmas in ~2 min; 100% of a 60-word sample of common forms (plurals, irregular verbs, accents, ñ); lookup p50 0.25 ms, p95 0.31 ms
+  - Enclitic forms ("dámelo", "comerlo") excluded like the RAE; a few appear as literal RLA-ES entries ("dámelo", "yéndose"), accepted as-is
+- [ ] PR 2 `feat/dictionary-pos`: part of speech per lemma from Spanish Wiktionary (kaikki.org JSONL, streamed) + credits page with CC BY-SA attribution
+- [ ] PR 3 `feat/local-word-validation`: validate against `words` first, RAE API as cached fallback; words the API confirms are stored (`source = rae-api`, word/lemma/category only); benchmark p95 < 5 ms
+- [ ] PR 4 `feat/solvable-plates`: `plates` table with solution counts (any order / in order); generator only picks plates with at least N solutions
 
 ## F3 – Frontend rebuild
 - [ ] Tailwind 4 + Alpine; remove Bootstrap, jQuery, Sass, CDNs (fonts/icons self-hosted)
@@ -93,8 +95,9 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [ ] Domain
 - [ ] Redis, Reverb daemon, queue worker, scheduler, SSL
 - [ ] Deploy script runs `php artisan db:seed --class=AchievementsSeeder --force` after migrations
+- [ ] Run `php artisan dictionary:import` once on the server (and after updating the pinned dictionary version)
 - [ ] Security headers (CSP, HSTS), error monitoring, backups, uptime on `/up`
 - [ ] Load test lobbies at 16 players
 
 ## Backlog (new ideas)
-- (empty)
+- Word suggestions: "Sugerir palabra" button after a rejected word → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → manual approval for anything not confirmed; n8n optional for notifications/approval via signed webhook

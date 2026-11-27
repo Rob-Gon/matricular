@@ -31,6 +31,7 @@ DB_PASSWORD=
 Then:
 ```bash
 php artisan migrate --seed
+php artisan dictionary:import   # ~600k Spanish word forms, about 2 minutes
 npm run dev
 ```
 

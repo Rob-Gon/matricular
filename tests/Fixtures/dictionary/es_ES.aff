@@ -1,0 +1,19 @@
+SET UTF-8
+FLAG UTF-8
+
+SFX S Y 2
+SFX S 0 s [aeiou]
+SFX S 0 es [^aeiou]
+
+SFX G Y 1
+SFX G o a/S o
+
+PFX I Y 1
+PFX I 0 in .
+
+SFX À Y 1
+SFX À 0 lo r
+
+SFX X Y 2
+SFX X 0 se [eií]r
+SFX X er iendo er
