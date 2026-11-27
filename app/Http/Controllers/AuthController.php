@@ -2,267 +2,98 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\DeleteProfileRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
-    public function registerView()
+    public function registerView(): View
     {
         return view('app.register');
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request): JsonResponse|RedirectResponse
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ];
+        // The "hashed" cast on User hashes the password.
+        User::create($request->validated());
 
-        $messages = [
-            'name.required' => 'El nombre es requerido',
-            'name.string' => 'El nombre debe ser una cadena de texto',
-            'name.max' => 'El nombre no debe exceder los 255 caracteres',
-            'email.required' => 'El email es requerido',
-            'email.email' => 'El email debe ser una dirección de correo electrónico válida',
-            'email.max' => 'El email no debe exceder los 255 caracteres',
-            'email.unique' => 'El email ya está registrado',
-            'password.required' => 'La contraseña es requerida',
-            'password.string' => 'La contraseña debe ser una cadena de texto',
-            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
-            'password.confirmed' => 'Las contraseñas no coinciden',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-
-            return redirect()->route('register.view')->withErrors($validator)->withInput();
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro exitoso. Por favor, inicia sesión.',
-                'redirect' => route('login.view'),
-            ]);
-        }
-
-        return redirect()->route('login.view')->with('success', 'Registro exitoso. Por favor, inicia sesión.');
+        return $this->respond($request, 'Registro exitoso. Por favor, inicia sesión.', route('login.view'));
     }
 
-    public function loginView()
+    public function loginView(): View
     {
         return view('app.login');
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request): JsonResponse|RedirectResponse
     {
-        $rules = [
-            'email' => 'required|email',
-            'password' => 'required',
-        ];
+        $request->authenticate();
+        $request->session()->regenerate();
 
-        $messages = [
-            'email.required' => 'El email es requerido',
-            'email.email' => 'El email debe ser una dirección de correo electrónico válida',
-            'password.required' => 'La contraseña es requerida',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-
-            return redirect()->route('login.view')->withErrors($validator)->withInput();
-        }
-
-        if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
-            // Establecer tiempo inicial de última actividad
-            $request->session()->put('last_activity', time());
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Sesión iniciada correctamente',
-                    'redirect' => route('menu.view'),
-                ]);
-            }
-
-            return redirect()->route('menu.view');
-        }
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Las credenciales proporcionadas no coinciden con nuestros registros.',
-            ], 401);
-        }
-
-        return redirect()->route('login.view')->with('error', 'Las credenciales proporcionadas no coinciden con nuestros registros.');
+        return $this->respond($request, 'Sesión iniciada correctamente', route('menu.view'), flash: false);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse|RedirectResponse
     {
-        // Limpiar el remember token si existe
-        if (Auth::check() && Auth::user()->remember_token) {
-            Auth::user()->update(['remember_token' => null]);
-        }
-
+        // Logging out also rotates the remember token, so "remember me" cookies stop working.
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Sesión cerrada correctamente',
-                'redirect' => route('login.view'),
-            ]);
-        }
-
-        return redirect()->route('login.view')->with('success', 'Sesión cerrada correctamente.');
+        return $this->respond($request, 'Sesión cerrada correctamente', route('login.view'));
     }
 
-    public function profileView()
+    public function profileView(): View
     {
         return view('app.profile');
     }
 
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse|RedirectResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
+        $user->name = $request->validated('name');
+        $user->email = $request->validated('email');
 
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users')->ignore($user->id),
-            ],
-        ];
-
-        $messages = [
-            'name.required' => 'El nombre es requerido',
-            'name.string' => 'El nombre debe ser una cadena de texto',
-            'name.max' => 'El nombre no debe exceder los 255 caracteres',
-            'email.required' => 'El email es requerido',
-            'email.email' => 'El email debe ser una dirección de correo electrónico válida',
-            'email.max' => 'El email no debe exceder los 255 caracteres',
-            'email.unique' => 'El email ya está registrado',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-
-            return redirect()->route('profile.view')->withErrors($validator)->withInput();
+        if ($request->filled('new_password')) {
+            $user->password = $request->validated('new_password');
         }
 
-        if ($request->filled('current_password') || $request->filled('new_password') || $request->filled('new_password_confirmation')) {
-            $rules = [
-                'current_password' => 'required',
-                'new_password' => 'required|string|min:8|confirmed',
-            ];
-
-            $messages = [
-                'current_password.required' => 'La contraseña actual es requerida',
-                'new_password.required' => 'La nueva contraseña es requerida',
-                'new_password.string' => 'La nueva contraseña debe ser una cadena de texto',
-                'new_password.min' => 'La nueva contraseña debe tener al menos 8 caracteres',
-                'new_password.confirmed' => 'Las contraseñas no coinciden',
-            ];
-
-            $validator = Validator::make($request->all(), $rules, $messages);
-
-            if ($validator->fails()) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Error de validación de contraseña',
-                        'errors' => $validator->errors(),
-                    ], 422);
-                }
-
-                return redirect()->route('profile.view')->withErrors($validator)->withInput();
-            }
-
-            if (! Hash::check($request->current_password, $user->password)) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'La contraseña actual es incorrecta',
-                    ], 422);
-                }
-
-                return redirect()->route('profile.view')->with('error', 'La contraseña actual es incorrecta.');
-            }
-
-            $user->password = Hash::make($request->new_password);
-        }
-
-        $user->name = $request->name;
-        $user->email = $request->email;
         $user->save();
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Perfil actualizado correctamente',
-            ]);
-        }
-
-        return redirect()->route('profile.view')->with('success', 'Perfil actualizado correctamente.');
+        return $this->respond($request, 'Perfil actualizado correctamente', route('profile.view'));
     }
 
-    public function deleteProfile(Request $request)
+    public function deleteProfile(DeleteProfileRequest $request): JsonResponse|RedirectResponse
     {
-        $user = Auth::user();
-        $user->delete();
+        $user = $request->user();
 
+        Auth::logout();
+        $user->delete();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return $this->respond($request, 'Cuenta eliminada correctamente', route('login.view'));
+    }
+
+    /**
+     * The auth forms submit with fetch (JSON); plain form posts get a redirect with a flash message.
+     */
+    private function respond(Request $request, string $message, string $redirect, bool $flash = true): JsonResponse|RedirectResponse
+    {
         if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Cuenta eliminada correctamente',
-                'redirect' => route('login.view'),
-            ]);
+            return response()->json(['success' => true, 'message' => $message, 'redirect' => $redirect]);
         }
 
-        return redirect()->route('login.view')->with('success', 'Cuenta eliminada correctamente.');
+        $response = redirect()->to($redirect);
+
+        return $flash ? $response->with('success', $message) : $response;
     }
 }

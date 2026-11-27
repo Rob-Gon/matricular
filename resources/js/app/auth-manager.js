@@ -357,8 +357,12 @@ class AuthManager {
     static confirmDeleteProfile() {
         Swal.fire({
             title: '¿Eliminar cuenta?',
-            text: "Esta acción no se puede deshacer. ¿Estás seguro de que quieres eliminar tu cuenta permanentemente?",
+            text: "Esta acción no se puede deshacer. Introduce tu contraseña para eliminar tu cuenta permanentemente.",
             icon: 'warning',
+            input: 'password',
+            inputLabel: 'Contraseña',
+            inputAttributes: { autocomplete: 'current-password' },
+            inputValidator: (value) => !value && 'Introduce tu contraseña',
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar cuenta',
             cancelButtonText: 'Cancelar',
@@ -377,13 +381,16 @@ class AuthManager {
                     ...swalConfig
                 });
                 
+                const formData = new FormData(document.getElementById('delete-profile-form'));
+                formData.append('password', result.value);
+
                 fetch('/profile', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                         'Accept': 'application/json'
                     },
-                    body: new FormData(document.getElementById('delete-profile-form'))
+                    body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -404,7 +411,7 @@ class AuthManager {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Ha ocurrido un error al eliminar la cuenta',
+                            text: data.errors ? Object.values(data.errors).flat().join('\n') : 'Ha ocurrido un error al eliminar la cuenta',
                             confirmButtonText: 'Intentar de nuevo',
                             ...swalConfig
                         });

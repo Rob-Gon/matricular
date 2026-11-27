@@ -13,7 +13,7 @@ class Authenticate extends Middleware
      * Redirige al usuario a la página de inicio si no ha iniciado sesión
      *
      * @param  Request  $request
-     * @param  string[]  ...$guards
+     * @param  string  ...$guards
      * @return mixed
      */
     public function handle($request, Closure $next, ...$guards)

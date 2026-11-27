@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ScoreController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 
 Route::get('/', function () {
     return view('app.home');
@@ -19,24 +18,11 @@ Route::middleware('guest')->group(function () {
 
     // Registro
     Route::get('/register', [AuthController::class, 'registerView'])->name('register.view');
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register');
 });
 
 // Rutas para usuarios autenticados y que ya han iniciado sesión
 Route::middleware('auth')->group(function () {
-
-    // Extender la sesión del usuario
-    Route::post('/extend-session', function () {
-        // Actualizar tiempo de última actividad
-        session(['last_activity' => time()]);
-
-        // Regenerar remember token si es necesario
-        if (Auth::check() && ! Auth::user()->remember_token) {
-            Auth::user()->update(['remember_token' => Str::random(60)]);
-        }
-
-        return response()->json(['success' => true]);
-    })->name('extend-session');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

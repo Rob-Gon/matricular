@@ -171,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderTopScoresTable(topScores) {
+        // Static markup only; user data (names) is inserted as text nodes below to prevent XSS.
         let html = `<div class="card my-5">
     <div class="card-header bg-primary text-white">
         <h2 class="mb-0">
@@ -180,22 +181,39 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
     <div class="card-body">`;
         if (topScores.length > 0) {
-            html += `<div class="table-responsive"><table class="table table-striped table-hover"><thead class="table-dark"><tr><th scope="col">#</th><th scope="col">Usuario</th><th scope="col">Email</th><th scope="col">Mayor Puntuación</th><th scope="col">Total de Partidas</th></tr></thead><tbody>`;
-            topScores.forEach((score, index) => {
-                html += `<tr class="${index < 3 ? 'table-warning' : ''}">`;
-                html += `<td>${index < 3 ? '<i class="fas fa-medal text-warning me-1"></i>' : ''}${index + 1}</td>`;
-                html += `<td><strong>${score.name}</strong></td>`;
-                html += `<td>${score.email}</td>`;
-                html += `<td><span class="badge bg-success fs-6">${Number(score.highest_score ?? 0).toLocaleString()}</span></td>`;
-                html += `<td><span class="badge bg-info">${score.total_runs ?? 0}</span></td>`;
-                html += `</tr>`;
-            });
-            html += `</tbody></table></div>`;
+            html += `<div class="table-responsive"><table class="table table-striped table-hover"><thead class="table-dark"><tr><th scope="col">#</th><th scope="col">Usuario</th><th scope="col">Mayor Puntuación</th><th scope="col">Total de Partidas</th></tr></thead><tbody></tbody></table></div>`;
         } else {
             html += `<div class="text-center py-4"><i class="fas fa-info-circle text-muted fa-3x mb-3"></i><h4 class="text-muted">No hay puntuaciones disponibles todavía</h4><p class="text-muted">Comienza a jugar para ver las puntuaciones más altas</p></div>`;
         }
         html += `</div></div>`;
-        document.getElementById('topScoresTableContainer').innerHTML = html;
+
+        const container = document.getElementById('topScoresTableContainer');
+        container.innerHTML = html;
+
+        const tbody = container.querySelector('tbody');
+        topScores.forEach((score, index) => {
+            const row = tbody.insertRow();
+            if (index < 3) {
+                row.className = 'table-warning';
+            }
+
+            const rank = row.insertCell();
+            if (index < 3) {
+                rank.append(createElement('i', 'fas fa-medal text-warning me-1'));
+            }
+            rank.append(String(index + 1));
+
+            row.insertCell().append(createElement('strong', '', score.name));
+            row.insertCell().append(createElement('span', 'badge bg-success fs-6', Number(score.highest_score ?? 0).toLocaleString()));
+            row.insertCell().append(createElement('span', 'badge bg-info', String(score.total_runs ?? 0)));
+        });
+    }
+
+    function createElement(tag, className, text = '') {
+        const element = document.createElement(tag);
+        element.className = className;
+        element.textContent = text;
+        return element;
     }
 
     // Modo

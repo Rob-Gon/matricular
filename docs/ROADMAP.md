@@ -2,7 +2,7 @@
 
 Update this file at the end of every task: tick what is done, add findings, move new ideas to the backlog.
 
-## Current phase: F1 – Fixes & hardening (PR 1–2 of 4 done)
+## Current phase: F1 – Fixes & hardening (PR 1–3 of 4 done)
 
 ## F0 – Foundation
 - [x] Project `CLAUDE.md` and `.claude/rules/` (game, dictionary, realtime, design)
@@ -40,11 +40,11 @@ Split in four PRs: game hardening → word normalization → auth hardening → 
 - [x] Words must be letters only (`\p{L}+`), rejected before scoring
 
 ### PR 3 · `fix/auth-hardening`
-- [ ] Form Requests for login/register/profile; rate limiting on login and register
-- [ ] Delete account requires the current password
-- [ ] XSS: `innerHTML` with user names in `scores-manager.js`
-- [ ] Remove user emails from rankings (view and JSON)
-- [ ] Remove dead `app/Http/Kernel.php`, `CheckSessionExpiration`, `session-manager.js`, `/extend-session` and the `session-start-time` meta (decision: rely on Laravel session + remember me)
+- [x] Form Requests for login/register/profile; login locks out after 5 failures per email+IP, register throttled 5/min
+- [x] Delete account requires the current password and logs the user out
+- [x] XSS: `innerHTML` with user names in `scores-manager.js` (now text nodes)
+- [x] Remove user emails from rankings (view and JSON); `remember_token` no longer mass assignable
+- [x] Remove dead `app/Http/Kernel.php`, `CheckSessionExpiration`, `session-manager.js`, `/extend-session` and the `session-start-time` meta (decision: rely on Laravel session + remember me)
 
 ### PR 4 · `fix/achievements-models`
 - [ ] Seeder column mismatch (`name` vs `achievement`), typo `$achievemen`, duplicated entries, "!" instead of "¡"

@@ -63,14 +63,14 @@ class ScoreController extends Controller
      */
     private function topScoresQuery(): Builder
     {
-        return User::select('users.id', 'users.name', 'users.email')
+        return User::select('users.id', 'users.name')
             ->selectRaw('MAX(runs.score) as highest_score')
             ->selectRaw('COUNT(runs.id) as total_runs')
             ->join('runs', 'users.id', '=', 'runs.user_id')
             ->where(fn (Builder $query) => $query
                 ->whereJsonLength('runs.words_correct', '>', 0)
                 ->orWhereJsonLength('runs.words_error', '>', 0))
-            ->groupBy('users.id', 'users.name', 'users.email')
+            ->groupBy('users.id', 'users.name')
             ->orderBy('highest_score', 'desc')
             ->orderBy('users.name', 'asc')
             ->limit(10);

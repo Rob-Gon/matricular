@@ -234,7 +234,7 @@ class GameTest extends TestCase
     {
         $run = Run::factory()->create();
 
-        $this->actingAs($run->user)->delete(route('profile.delete'))->assertRedirect();
+        $this->actingAs($run->user)->delete(route('profile.delete'), ['password' => 'password'])->assertRedirect();
 
         $this->assertDatabaseCount('runs', 0);
     }
