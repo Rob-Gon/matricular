@@ -184,4 +184,17 @@ class AchievementTest extends TestCase
             ->assertSee('???')
             ->assertDontSee('Acierta una palabra que se lea igual al revés');
     }
+
+    public function test_each_achievement_shows_its_sticker_and_platinum_shines(): void
+    {
+        $user = User::factory()->create();
+        $user->achievements()->attach(Achievement::whereIn('key', ['nouns', 'platinum'])->pluck('id'), ['unlocked_at' => now()]);
+
+        $this->actingAs($user)->get(route('achievements.view'))
+            ->assertOk()
+            ->assertSee('bg-glass', false)
+            ->assertSee('sticker-platinum', false)
+            ->assertSee('sticker-halo', false)
+            ->assertSee('bg-ink! text-enamel!', false);
+    }
 }

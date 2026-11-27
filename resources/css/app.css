@@ -488,6 +488,48 @@
         border: 2px solid currentColor;
         border-radius: 0.35em;
     }
+
+    /* Platinum sticker: brushed metal with a slow shine, over a halo of turning light rays. */
+    .sticker-platinum {
+        background: linear-gradient(120deg, #F6F6F8 0%, #C4C8D0 30%, #FBFBFC 48%, #AFB4BE 70%, #ECEDF1 100%);
+        background-size: 220% 220%;
+        animation: sticker-shine 6s ease-in-out infinite;
+    }
+
+    .sticker-halo {
+        position: absolute;
+        inset: -34%;
+        z-index: -1;
+        border-radius: 50%;
+        background: repeating-conic-gradient(rgb(255 246 214 / 0.95) 0deg 9deg, transparent 9deg 24deg);
+        mask-image: radial-gradient(circle, #000 34%, transparent 70%);
+        animation: sticker-spin 16s linear infinite;
+    }
+
+    .sticker-halo::after {
+        content: "";
+        position: absolute;
+        inset: 22%;
+        border-radius: 50%;
+        box-shadow: 0 0 28px 12px rgb(255 248 225 / 0.85);
+    }
+
+    @keyframes sticker-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes sticker-shine {
+        0%,
+        100% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -115,7 +115,7 @@
                         <div class="flex flex-wrap gap-9">
                             @foreach ($achievements as $achievement)
                                 <figure class="flex items-center gap-4">
-                                    <x-sticker :tilt="$loop->odd ? -8 : 6" />
+                                    <x-sticker :icon="$achievement->icon" :tilt="$loop->odd ? -8 : 6" />
                                     <figcaption class="flex flex-col gap-0.5">
                                         <strong class="font-display text-xl font-normal">{{ $achievement->name }}</strong>
                                         <span class="text-xl">{{ $achievement->description }}</span>

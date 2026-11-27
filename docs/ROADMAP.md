@@ -128,7 +128,7 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 - [x] Custom countdown from 1 to 60 minutes (`CountdownModes::PERSONALIZADO`, length in the new `runs.countdown_seconds`; `countdown_time` is now a string instead of a MySQL enum); not eligible for "Matriculando fuerte"; rankings show it only under its own "Personalizado" duration filter
 
 ### PR 3 · `feat/achievement-stickers`
-- [ ] A sticker per achievement (icon artwork by `icon` key); platinum with a light halo, animation and platinum colour
+- [x] A sticker per achievement (`x-sticker`, artwork by `icon` key) in ITV colours by family: general mustard, vowels plate blue, parts of speech glass, hidden signal red; platinum in brushed metal with a shine, a halo of turning rays (still with reduced motion) and a dark card
 
 ### Later
 - [ ] Optional Steam-like extras: progress (12/25), rarity (% of players)
