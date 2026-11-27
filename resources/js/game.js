@@ -175,7 +175,7 @@ export default (config) => ({
     },
 
     notify(achievement) {
-        const toast = { id: `${achievement.key}-${Date.now()}`, name: achievement.name };
+        const toast = { id: `${achievement.key}-${Date.now()}`, name: achievement.name, icon: achievement.icon };
         this.toasts.push(toast);
         setTimeout(() => this.$store.sound.play('achievement'), 300);
         setTimeout(() => this.dismiss(toast.id), 6000);

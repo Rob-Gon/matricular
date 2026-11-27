@@ -128,8 +128,13 @@
         <div role="status" aria-live="polite" class="fixed top-28 right-6 z-20 flex w-[min(340px,calc(100vw-3rem))] flex-col gap-3">
             <template x-for="toast in toasts" :key="toast.id">
                 <div class="paper flex items-center gap-3.5 px-3.5 py-3">
-                    <span aria-hidden="true" class="flex size-16 shrink-0 -rotate-8 items-center justify-center rounded-full border-4 border-ink bg-mustard">
-                        <svg viewBox="0 0 24 24" class="size-8" fill="none" stroke="#000000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg>
+                    {{-- Every sticker is rendered here once; the toast shows the one of the unlocked achievement. --}}
+                    <span class="size-24 shrink-0 [zoom:0.67]">
+                        @foreach (collect(config('achievements'))->pluck('icon')->unique() as $icon)
+                            <template x-if="toast.icon === @js($icon)">
+                                <x-sticker :icon="$icon" />
+                            </template>
+                        @endforeach
                     </span>
                     <p class="flex flex-1 flex-col">
                         <span class="text-lg font-bold">Logro desbloqueado</span>
