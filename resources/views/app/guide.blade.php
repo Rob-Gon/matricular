@@ -63,7 +63,7 @@
                 <h2 id="teclado" class="font-display text-3xl">Con teclado</h2>
                 <ul class="flex list-disc flex-col gap-2 pl-6 text-xl">
                     <li><strong>Intro</strong> comprueba la palabra que has escrito.</li>
-                    <li><strong>Shift</strong>, pulsada sola y sin otra tecla, hace Pasamatrícula. Escribir una mayúscula con Shift no cuenta.</li>
+                    <li><strong>Control</strong> (<strong>Comando</strong> en Mac), pulsada sola y sin otra tecla, hace Pasamatrícula. Los atajos como Control + Z no cuentan.</li>
                 </ul>
             </section>
 

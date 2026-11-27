@@ -19,7 +19,7 @@ These replace the old Easy/Medium/Hard difficulty and can be combined:
 - A word already accepted in the same run does not score again.
 
 ## Scoring (current values, keep unless the user changes them)
-- Valid word: +10. Invalid word: −5. Skip plate ("Pasamatrícula", also Shift pressed alone): −5.
+- Valid word: +10. Invalid word: −5. Skip plate ("Pasamatrícula", also Control, or Command on Mac, pressed alone): −5.
 
 ## Multiplayer formats (all three are lobby options)
 1. **Parallel race**: every player gets the same seeded plate sequence and advances independently. Highest score at the end wins.

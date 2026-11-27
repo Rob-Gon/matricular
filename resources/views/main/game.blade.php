@@ -22,7 +22,7 @@
         x-data="game(@js($config))"
         @keydown.window="onKeydown($event)"
         @keyup.window="onKeyup($event)"
-        @mousedown.window="shiftAlone = false"
+        @mousedown.window="skipKeyAlone = false"
         class="flex flex-col items-center gap-7 overflow-x-clip pb-14"
     >
         <h1 class="sr-only">Partida</h1>
@@ -97,16 +97,13 @@
                 </button>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <button type="button" class="btn" aria-keyshortcuts="Shift" @click="skip()" :disabled="busy || over">
-                    Pasamatrícula (−{{ Run::POINTS_PENALTY }}) <span class="kbd max-sm:hidden" aria-hidden="true">Shift</span>
+                <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over">
+                    Pasamatrícula (−{{ Run::POINTS_PENALTY }}) <span class="kbd max-sm:hidden" aria-hidden="true" x-text="skipKeyLabel">Ctrl</span>
                 </button>
                 @if (! $countdownTotal)
                     <button type="button" class="btn btn-danger" @click="$refs.confirmEnd.showModal()" :disabled="over">Terminar partida</button>
                 @endif
             </div>
-            <p class="text-lg max-sm:hidden">
-                Pulsa <span class="kbd">Shift</span> sola, sin otra tecla, para pasar de matrícula.
-            </p>
         </form>
 
         @if (! $countdownTotal)

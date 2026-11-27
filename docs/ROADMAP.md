@@ -85,7 +85,7 @@ Five PRs. A new layout (`components/layouts/app`) lives next to the legacy `layo
 ### PR 3 · `feat/game-screen`
 - [x] Game screen in Alpine + `fetch` (`resources/js/game.js`) replacing `game-manager.js`: car + plate drop, fuel-gauge timer counted against a deadline, odometer, road-sign feedback, achievement toast, native `<dialog>` to end an infinite run
 - [x] Skip button renamed "Pasamatrícula" (−5)
-- [x] Keyboard shortcuts: Enter submits the word (native form submit); Shift pressed and released alone triggers "Pasamatrícula" (owner's choice; Shift + letter still types a capital). Keys shown on the buttons (hidden on small screens) and in the guide
+- [x] Keyboard shortcuts: Enter submits the word (native form submit); Control (Command on Mac) pressed and released alone triggers "Pasamatrícula" (owner's choice, replaced Shift; shortcuts such as Ctrl+Z do not count). Keys shown on the buttons (hidden on small screens) and in the guide
 - [x] "Fin del trayecto" end screen (`/game/{run}/summary`, "no entry" sign) with the trip receipt: correct/failed words, skips, longest word, personal best and the run's achievements. Opening it closes a countdown that ran out with the tab closed, so its run achievements are no longer skipped
 - [x] "Sugerir «palabra»" stays hidden until the suggestions flow exists
 
