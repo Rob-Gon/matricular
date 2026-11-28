@@ -142,7 +142,7 @@ class Lobby extends Model
             ],
             LobbyFormats::FIRST => [
                 ['term' => 'Matrículas', 'value' => $s['plates'].', '.$s['plate_seconds'].' s cada una como máximo'],
-                ['term' => 'Casi a la vez', 'value' => $s['tie_window_ms'] > 0 ? 'Puntúan todos los que acierten en '.$s['tie_window_ms'].' ms' : 'Solo puntúa el primero'],
+                ['term' => 'Respuestas simultáneas', 'value' => $s['tie_window_ms'] > 0 ? 'Puntúan todos los que acierten en '.$s['tie_window_ms'].' ms' : 'Solo puntúa el primero'],
                 ['term' => 'Si todos fallan', 'value' => 'La matrícula pasa sin quitar puntos'],
             ],
         };
@@ -152,7 +152,7 @@ class Lobby extends Model
         return [
             ...$rules,
             ['term' => 'Letras', 'value' => $letters.', '.(($s['ordered'] ?? false) ? 'en el orden de la matrícula' : 'en cualquier orden')],
-            ['term' => 'Empate final', 'value' => ($s['tie_resolution'] ?? 'tiebreak') === 'shared'
+            ['term' => 'Empate a puntos al final', 'value' => ($s['tie_resolution'] ?? 'tiebreak') === 'shared'
                 ? 'Los empatados comparten puesto'
                 : 'Matrícula extra solo para los empatados del podio'],
         ];

@@ -162,10 +162,10 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] "¡Pita!" and "¡Grita!": `POST /lobbies/{code}/horn` and `/shout`, each once every 3 s per player (`Lobby::SOUND_COOLDOWN_SECONDS`, rate limiters `horn` and `shout`); the server sends a random number so everyone hears the same sound, and the button also waits for your own sound to end. Files in `resources/sounds/horns` (Freesound + BigSoundBank, credited) and `resources/sounds/shouts` (the owner's own recordings), trimmed and loudness-matched; without horn files a two-note horn is synthesised
 - [x] "Bocinas y gritos de los demás" in the sound menu (lobby and match) mutes other players' horns and shouts; your own still sound
 ### PR 6 · `fix/race-polish`
-- [ ] The word input empties whenever the plate changes (every mode): today a player typing keeps their text when someone else takes the plate
-- [ ] Sound button in the top bar, right of the clock (the menu opens downwards); today it is cut off below the form
-- [ ] "Revancha" marks the player ready (POST) and goes back to the grid; players who do not come back stay not ready
-- [ ] Clearer tie options: "Margen para respuestas simultáneas" (first wins, same plate) with a help line, and "Empate a puntos al final"
+- [x] The word input empties whenever the plate changes (every mode): today a player typing keeps their text when someone else takes the plate
+- [x] Sound button in the top bar, right of the clock (the menu opens downwards; on phones it sits under the clock); it used to be cut off below the form
+- [x] "Revancha" marks the player ready (`POST /lobbies/{code}/rematch`) and goes back to the grid; "ready" is cleared when a match starts, so players who do not come back stay not ready
+- [x] Clearer tie options: "Margen para respuestas simultáneas" (first wins, same plate) with a help line, and "Empate a puntos al final"
 ### PR 7 · `feat/rankings`
 - [ ] Clasificación with Individual and Multijugador tabs: global top 10, today's top 10 (Europe/Madrid day) and your best games, plus your latest games. A top lists the 10 best games (a player may repeat), by points, showing mode/format, letters and order; filters narrow it (multiplayer also by format)
 ### PR 8 · `feat/multiplayer-polish`

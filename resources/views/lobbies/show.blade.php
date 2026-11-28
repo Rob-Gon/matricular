@@ -176,13 +176,15 @@
                 <div class="flex flex-wrap gap-5" x-show="form.format === 'first'">
                     <label class="field"><span class="field-label">Matrículas (1–50)</span><input type="number" min="1" max="50" class="field-input w-32!" x-model.number="form.plates"></label>
                     <label class="field"><span class="field-label">Segundos por matrícula (10–120)</span><input type="number" min="10" max="120" class="field-input w-32!" x-model.number="form.plate_seconds"></label>
-                    <label class="field"><span class="field-label">Margen para empates</span>
-                        <select class="field-input" x-model="form.tie_window_ms">
+                    <div class="field max-w-md">
+                        <label class="field-label" for="tie-window">Margen para respuestas simultáneas</label>
+                        <select id="tie-window" class="field-input" aria-describedby="tie-window-hint" x-model="form.tie_window_ms">
                             <option value="0">Sin margen</option>
                             <option value="150">150 ms</option>
                             <option value="300">300 ms</option>
                         </select>
-                    </label>
+                        <p id="tie-window-hint" class="text-lg">Si varios aciertan la misma matrícula con menos de este margen tras el primero, puntúan todos.</p>
+                    </div>
                 </div>
 
                 <fieldset class="flex flex-wrap items-center gap-2.5">
@@ -194,7 +196,7 @@
                 </fieldset>
 
                 <fieldset class="flex flex-wrap items-center gap-2.5">
-                    <legend class="float-left mr-2 text-xl font-black">Empate final</legend>
+                    <legend class="float-left mr-2 text-xl font-black">Empate a puntos al final</legend>
                     <x-option variant="chip" name="tie_resolution" value="tiebreak" model="form.tie_resolution" label="Matrícula de desempate" class="text-lg!" />
                     <x-option variant="chip" name="tie_resolution" value="shared" model="form.tie_resolution" label="Comparten puesto" class="text-lg!" />
                 </fieldset>

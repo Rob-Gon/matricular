@@ -87,6 +87,17 @@ class LobbyController extends Controller
         return response()->json($this->lobbies->setReady($lobby, $request->user(), (bool) $ready['ready'])->state());
     }
 
+    /**
+     * "Revancha" on the results page: back to the grid, already ready, so the host only has to start.
+     */
+    public function rematch(Request $request, Lobby $lobby): RedirectResponse
+    {
+        Gate::authorize('view', $lobby);
+        $this->lobbies->setReady($lobby, $request->user(), true);
+
+        return redirect()->route('lobbies.show', $lobby);
+    }
+
     public function color(Request $request, Lobby $lobby): JsonResponse
     {
         Gate::authorize('view', $lobby);

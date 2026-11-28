@@ -88,6 +88,7 @@ Route::middleware('auth')->group(function () {
 
         Route::middleware('throttle:game')->group(function () {
             Route::post('/{lobby}/ready', 'ready')->name('ready');
+            Route::post('/{lobby}/rematch', 'rematch')->name('rematch');
             Route::post('/{lobby}/color', 'color')->name('color');
             Route::put('/{lobby}/rules', 'rules')->name('rules');
             Route::post('/{lobby}/kick', 'kick')->name('kick');

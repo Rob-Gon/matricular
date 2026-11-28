@@ -118,7 +118,10 @@
                     @endif
 
                     <div class="mt-3 flex flex-wrap items-center gap-4.5">
-                        <a class="btn btn-primary text-2xl" href="{{ route('lobbies.show', $lobby) }}">Revancha</a>
+                        <form method="POST" action="{{ route('lobbies.rematch', $lobby) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-primary text-2xl">Revancha</button>
+                        </form>
                         <form method="POST" action="{{ route('lobbies.leave', $lobby) }}">
                             @csrf
                             <button type="submit" class="btn text-2xl">Salir de la sala</button>
@@ -126,7 +129,7 @@
                         {{-- The race music carries on here; this is where to turn it down or off. --}}
                         <x-sound-controls x-init="$store.sound.resumeMusic()" />
                     </div>
-                    <p class="text-xl">«Revancha» vuelve a la parrilla con los mismos jugadores y reglas.</p>
+                    <p class="text-xl">«Revancha» te lleva a la parrilla con los mismos jugadores y reglas, ya listo para salir.</p>
                 </div>
             </div>
         </section>
