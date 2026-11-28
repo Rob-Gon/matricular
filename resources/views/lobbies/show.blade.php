@@ -120,7 +120,7 @@
 
             <div class="flex flex-wrap items-center justify-end gap-5">
                 <p class="text-xl font-bold" x-text="startHint"></p>
-                <button type="button" class="btn" x-show="isHost" :class="canStart ? 'btn-primary' : ''" :disabled="busy || !canStart" @click="start()" x-text="state.format === 'rounds' ? 'Empezar las rondas' : 'Empezar carrera'">Empezar carrera</button>
+                <button type="button" class="btn" x-show="isHost" :class="canStart ? 'btn-primary' : ''" :disabled="busy || !canStart" @click="start()" x-text="{ race: 'Empezar carrera', rounds: 'Empezar las rondas', first: 'Empezar la partida' }[state.format]">Empezar carrera</button>
             </div>
         </div>
 

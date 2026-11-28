@@ -34,6 +34,7 @@
         @keydown.window="onKeydown($event)"
         @keyup.window="onKeyup($event)"
         @pointerdown.window="onPointerdown()"
+        @first-plate.window="onFirstPlate($event.detail)"
         class="relative isolate flex flex-col items-center gap-7 overflow-x-clip pb-14 xl:min-h-dvh xl:gap-5 xl:pb-6"
     >
         <h1 class="sr-only">{{ $race['title'] ?? 'Partida' }}</h1>
@@ -47,7 +48,7 @@
             </div>
             <ul aria-label="Ajustes de esta partida" class="order-last flex w-full flex-wrap justify-center gap-2 sm:order-none sm:w-auto sm:gap-2.5">
                 @if ($race)
-                    <li class="rounded-full border-[3px] border-ink bg-mustard px-3 py-1 text-base font-black text-ink sm:px-4 sm:py-2 sm:text-xl" x-text="rounds ? `Ronda ${round + 1} de ${rounds}` : progress"></li>
+                    <li class="rounded-full border-[3px] border-ink bg-mustard px-3 py-1 text-base font-black text-ink sm:px-4 sm:py-2 sm:text-xl" x-text="rounds ? `${first ? 'Matrícula' : 'Ronda'} ${round + 1} de ${rounds}` : progress"></li>
                 @endif
                 @foreach ($race['labels'] ?? $run->settingsLabels() as $setting)
                     <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 xl:bg-enamel text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
@@ -110,11 +111,11 @@
                         spellcheck="false"
                         placeholder="Escribe aquí"
                         autofocus
-                        :disabled="over || waiting"
+                        :disabled="over || waiting || locked"
                         @paste.prevent
                     >
                 </div>
-                <button type="submit" class="btn btn-primary flex-[1_1_180px] text-2xl" aria-keyshortcuts="Enter" :disabled="busy || over || waiting">
+                <button type="submit" class="btn btn-primary flex-[1_1_180px] text-2xl" aria-keyshortcuts="Enter" :disabled="busy || over || waiting || locked">
                     Comprobar <span class="kbd max-sm:hidden" aria-hidden="true">Intro</span>
                 </button>
             </div>

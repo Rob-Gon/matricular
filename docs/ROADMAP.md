@@ -2,7 +2,7 @@
 
 Update this file at the end of every task: tick what is done, add findings, move new ideas to the backlog.
 
-## Current phase: F3 – Frontend rebuild (F2 done)
+## Current phase: F6 – Multiplayer (F0–F5 done)
 
 ## F0 – Foundation
 - [x] Project `CLAUDE.md` and `.claude/rules/` (game, dictionary, realtime, design)
@@ -153,7 +153,10 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] Rounds (1–30) of 10–300 s back to back, one distinct plate per round for everyone; valid words keep the plate; a word another player already scored in the round scores 0 (`taken`, decided under the match lock); no "Pasamatrícula"; a word sent just before the plate changes still answers its round (2 s grace)
 - [x] Plates are never in the page before their time: the first one (race and rounds) and each new round's come from `POST /lobbies/{code}/race/sync`, which refuses before the start; the tiebreak plate is rendered only once the tiebreak has started
 ### PR 4 · `feat/first-wins`
-- [ ] First valid answer takes the plate (1–50 plates), tie window, per-plate limit, plate passes when everyone failed
+- [x] Same plate for everyone (1–50 distinct plates, 10–120 s each); the first valid word takes it (+10) and valid words that arrive within the tie window (0/150/300 ms) also score; the next plate comes 1 s later (`LobbyMatch::FIRST_PAUSE_MS`) so everyone sees who took it
+- [x] One try per player and plate (owner's choice): a wrong word costs −5 and locks the player until the next plate; a repeated word scores 0 and keeps the try; words that arrive after the plate closed score nothing and cost nothing. The plate passes with no penalty once everyone failed it or its time is up; the last one ends the match (podium tiebreaks as usual)
+- [x] Plate state on the match (`plate_number`, `plate_started_at`, `plate_closes_at`, milliseconds) changed only with the match row locked (`App\Services\FirstWins`). Words are ordered by arrival time and judged outside the lock, so a slow dictionary lookup never holds the others up; `runs.answering_since` makes the next plate wait for a word that arrived in time and is still being judged (at most 5 s)
+- [x] `race.plate` broadcast (`FirstPlateUpdated`: closed with winner and delay, next plate, finished) never carries the plate: clients fetch it from `race/sync`, which also deals the next plate when due; no "Pasamatrícula"
 ### PR 5 · `feat/lobby-reactions`
 - [ ] Emoji reaction bubbles and horns (random sound, 5 s cooldown, mutable)
 ### PR 6 · `feat/multiplayer-polish`
@@ -171,6 +174,7 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [ ] Load test lobbies at 16 players
 
 ## Backlog (new ideas)
+- Multiplayer results: "Lo mejor de la carrera" says "carrera" in every format; word it per format. "First wins" could add "most plates taken"
 - Difficulty by solution count (e.g. hard deals plates with few solutions) and "words you could have made" at the end of a game, both from the `plates`/`words` tables
 - Performance: enable OPcache in Laragon (user action) and re-measure `check-word`; Redis for cache, session and rate limiter in production (F7); endpoint p95 in the F7 load test
 - Word suggestions: "Sugerir «palabra»" button after a dictionary rejection → `word_suggestions` table → automatic checks (RAE API, Wiktionary) → anything not confirmed is emailed to the owner with approve/reject links (signed URLs, or n8n calling a signed webhook) that update Laravel. The owner never edits the database by hand

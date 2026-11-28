@@ -5,6 +5,10 @@
 const IS_APPLE = /Mac|iPhone|iPad/.test(navigator.userAgentData?.platform ?? navigator.platform);
 const SKIP_KEY = IS_APPLE ? 'Meta' : 'Control';
 
+// Plate requests retried every 300 ms: a clock a little ahead of the server's, or a "first wins"
+// plate still waiting for a word being judged.
+const SYNC_ATTEMPTS = 25;
+
 const randomDigits = () => String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
 const FAILURES = {
@@ -30,6 +34,10 @@ export default (config) => ({
     // Multiplayer "rounds": the same plate for everyone, a new one each round.
     round: config.rounds?.current ?? 0,
     rounds: config.rounds?.count ?? 0,
+    // Multiplayer "first wins": rounds that end when someone takes the plate; one try per plate.
+    first: config.rounds?.first ?? false,
+    locked: config.rounds?.locked ?? false,
+    closedPlate: -1,
 
     init() {
         this.$store.sound.preload();
@@ -67,8 +75,53 @@ export default (config) => ({
         }
 
         if (this.remaining === 0) {
-            this.rounds && this.round < this.rounds - 1 ? this.nextRound() : this.end();
+            if (this.first) {
+                this.closePlate(this.round, config.rounds.pauseMs);
+            } else {
+                this.rounds && this.round < this.rounds - 1 ? this.nextRound() : this.end();
+            }
         }
+    },
+
+    // "First wins": the plate stopped taking answers; the next one is fetched once the server deals it.
+    closePlate(number, delayMs) {
+        if (this.closedPlate >= number) {
+            return;
+        }
+
+        this.closedPlate = number;
+        this.locked = true;
+        setTimeout(() => this.syncPlate(number + 1), delayMs);
+    },
+
+    // Broadcast by the server (see race.js): the plate closed, the next one is ready, or the match is over.
+    onFirstPlate({ plate, next_in_ms: nextInMs, winnerName, mine, finished }) {
+        if (finished) {
+            this.end();
+        } else if (nextInMs === null) {
+            if (plate > this.round) {
+                this.syncPlate(plate);
+            }
+        } else if (plate === this.round) {
+            if (!mine) {
+                this.feedback = { kind: 'warn', text: winnerName ? `¡${winnerName} se lleva la matrícula!` : 'Nadie ha sacado esta matrícula.' };
+            }
+            this.closePlate(plate, nextInMs);
+        }
+    },
+
+    // Each "first wins" plate brings its own clock.
+    startPlate(data) {
+        if (data.round > this.round) {
+            this.feedback = null;
+        }
+
+        this.round = data.round;
+        this.locked = data.first.locked;
+        this.deadline = Date.now() + data.first.ends_in_ms;
+        this.remaining = Math.min(config.total, Math.ceil(data.first.ends_in_ms / 1000));
+        // A disabled input loses focus.
+        this.$nextTick(() => this.$refs.word?.focus());
     },
 
     nextRound() {
@@ -88,8 +141,21 @@ export default (config) => ({
             });
             const data = await response.json().catch(() => ({}));
 
+            if (data.game_over) {
+                this.end();
+                return;
+            }
+
             if (response.ok && (data.round ?? expectedRound) >= expectedRound) {
+                // A plate already dealt by an earlier answer is not dealt again.
+                if (this.first && data.round < this.round) {
+                    return;
+                }
+
                 this.score = data.score;
+                if (this.first) {
+                    this.startPlate(data);
+                }
                 this.newPlate(data.chars.join(''));
                 return;
             }
@@ -97,7 +163,7 @@ export default (config) => ({
             // Retried below.
         }
 
-        if (attempt < 10 && !this.over) {
+        if (attempt < SYNC_ATTEMPTS && !this.over) {
             setTimeout(() => this.syncPlate(expectedRound, attempt + 1), 300);
         } else {
             this.feedback = { kind: 'warn', text: 'No llega la matrícula nueva. Recarga la página.' };
@@ -155,7 +221,7 @@ export default (config) => ({
     },
 
     async send(url, body, action) {
-        if (this.busy || this.over || this.waiting) {
+        if (this.busy || this.over || this.waiting || this.locked) {
             return false;
         }
 
@@ -210,6 +276,9 @@ export default (config) => ({
         // A late answer to the previous round must not bring its plate back.
         if (!this.rounds || data.round === this.round) {
             this.newPlate(data.chars.join(''));
+            if (data.first) {
+                this.locked = data.first.locked;
+            }
         }
         (data.achievements ?? []).forEach((achievement) => this.notify(achievement));
     },
