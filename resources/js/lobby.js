@@ -51,14 +51,10 @@ export default (config) => ({
 
     // The server checks the same conditions; this only enables the button and explains why it waits.
     get canStart() {
-        return this.state.format !== 'first' && this.state.players.length >= MIN_PLAYERS && this.waitingFor.length === 0;
+        return this.state.players.length >= MIN_PLAYERS && this.waitingFor.length === 0;
     },
 
     get startHint() {
-        if (this.state.format === 'first') {
-            return '«El primero gana» llega pronto: por ahora elige «Carrera» o «Rondas».';
-        }
-
         if (this.state.players.length < MIN_PLAYERS) {
             return 'Comparte el código: hace falta al menos otro jugador.';
         }

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\SubmitWord;
+use App\Enums\LobbyFormats;
 use App\Http\Requests\SubmitWordRequest;
 use App\Models\Lobby;
 use App\Models\LobbyMatch;
 use App\Models\Run;
+use App\Services\FirstWins;
 use App\Services\PlateGenerator;
 use App\Services\RaceManager;
 use App\Services\RaceReport;
@@ -23,7 +25,7 @@ use Illuminate\View\View;
  */
 class RaceController extends Controller
 {
-    public function __construct(private RaceManager $races) {}
+    public function __construct(private RaceManager $races, private FirstWins $firstWins) {}
 
     public function start(Lobby $lobby): JsonResponse
     {
@@ -41,6 +43,11 @@ class RaceController extends Controller
             return redirect()->route('lobbies.show', $lobby);
         }
 
+        if ($this->firstWins->advanceIfDue($match)) {
+            $match->refresh();
+            $run->refresh();
+        }
+
         if ($run->isOver() || $match->isFinished()) {
             return redirect()->route('lobbies.results', $lobby);
         }
@@ -53,15 +60,22 @@ class RaceController extends Controller
         }
 
         $roundEndsInMs = max(0, (int) now()->diffInMilliseconds($match->roundStartsAt($round + 1), false));
-        $total = $match->isRounds() ? $match->roundSeconds() : (int) $run->countdown_seconds;
+        $plateEndsInMs = $this->plateEndsInMs($match);
+        $total = match (true) {
+            $match->isRounds() => $match->roundSeconds(),
+            $match->isFirstWins() => $match->plateSeconds(),
+            default => (int) $run->countdown_seconds,
+        };
 
         return view('main.game', [
             'run' => $run,
             'countdownTotal' => $total,
             // During the traffic light the clock shows the full time.
-            'countdownRemaining' => $match->isRounds()
-                ? min($total, (int) ceil($roundEndsInMs / 1000))
-                : min($total, (int) $run->remainingSeconds()),
+            'countdownRemaining' => match (true) {
+                $match->isRounds() => min($total, (int) ceil($roundEndsInMs / 1000)),
+                $match->isFirstWins() => min($total, (int) ceil($plateEndsInMs / 1000)),
+                default => min($total, (int) $run->remainingSeconds()),
+            },
             'race' => [
                 'lobbyId' => $lobby->id,
                 'me' => $request->user()->id,
@@ -70,13 +84,26 @@ class RaceController extends Controller
                 'plate' => $started ? $run->plate : '',
                 'title' => $match->format->shortLabel(),
                 'labels' => $match->labels(),
-                'canSkip' => ! $match->isRounds(),
-                'rounds' => $match->isRounds() ? [
-                    'count' => $match->roundCount(),
-                    'seconds' => $match->roundSeconds(),
-                    'current' => $round,
-                    'endsInMs' => $roundEndsInMs,
-                ] : null,
+                'canSkip' => $match->format === LobbyFormats::RACE,
+                'rounds' => match (true) {
+                    $match->isRounds() => [
+                        'count' => $match->roundCount(),
+                        'seconds' => $match->roundSeconds(),
+                        'current' => $round,
+                        'endsInMs' => $roundEndsInMs,
+                    ],
+                    // "First wins" plates last until someone takes them, so the server says when each one ends.
+                    $match->isFirstWins() => [
+                        'first' => true,
+                        'count' => $match->plateCount(),
+                        'seconds' => $match->plateSeconds(),
+                        'current' => $match->plate_number,
+                        'endsInMs' => $plateEndsInMs,
+                        'pauseMs' => LobbyMatch::FIRST_PAUSE_MS,
+                        'locked' => $started && ! $this->firstWins->canAnswer($run, $match),
+                    ],
+                    default => null,
+                },
                 'standings' => $match->standings(),
                 'urls' => [
                     'word' => route('lobbies.race.word', $lobby),
@@ -104,6 +131,15 @@ class RaceController extends Controller
             $this->joinRound($run, $match, $match->currentRound());
         }
 
+        if ($this->firstWins->advanceIfDue($match)) {
+            $run->refresh();
+        }
+
+        // "First wins" ends when its last plate closes, which the clients learn from here if a broadcast is missed.
+        if ($match->isFirstWins() && $run->isOver()) {
+            return $this->response($run, ['success' => false, 'message' => 'La partida ha terminado.', 'game_over' => true]);
+        }
+
         return $this->response($run, ['success' => true, 'message' => '']);
     }
 
@@ -113,21 +149,23 @@ class RaceController extends Controller
         $match = $run->lobbyMatch;
         $before = $run->score;
 
-        $result = DB::transaction(function () use ($request, $run, $match, $submitWord): array {
-            if ($match?->isRounds()) {
-                // One word at a time per match, so "already said in this round" is decided in order.
-                LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
-                $round = $this->answeredRound($match, $request->integer('round', $match->currentRound()));
+        $result = $match?->isFirstWins()
+            ? $this->firstWins->answer($run, $match, $request->validated('word'), $request->integer('round', $match->plate_number))
+            : DB::transaction(function () use ($request, $run, $match, $submitWord): array {
+                if ($match?->isRounds()) {
+                    // One word at a time per match, so "already said in this round" is decided in order.
+                    LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
+                    $round = $this->answeredRound($match, $request->integer('round', $match->currentRound()));
 
-                if ($round === null) {
-                    return ['success' => false, 'message' => 'Esa ronda ya ha terminado. Prueba con la matrícula nueva.'];
+                    if ($round === null) {
+                        return ['success' => false, 'message' => 'Esa ronda ya ha terminado. Prueba con la matrícula nueva.'];
+                    }
+
+                    $this->joinRound($run, $match, $round);
                 }
 
-                $this->joinRound($run, $match, $round);
-            }
-
-            return $submitWord->handle($run, $request->validated('word'));
-        });
+                return $submitWord->handle($run, $request->validated('word'));
+            });
         Arr::forget($result, 'attempt'); // multiplayer runs unlock no achievements
 
         if ($run->score !== $before) {
@@ -142,8 +180,9 @@ class RaceController extends Controller
         $run = $this->runOrFail($request, $lobby);
         $before = $run->score;
 
-        if ($run->lobbyMatch?->isRounds()) {
-            return $this->response($run, ['success' => false, 'message' => 'En «Rondas» no hay Pasamatrícula.'], 422);
+        $match = $run->lobbyMatch;
+        if ($match !== null && $match->format !== LobbyFormats::RACE) {
+            return $this->response($run, ['success' => false, 'message' => 'En «'.$match->format->shortLabel().'» no hay Pasamatrícula.'], 422);
         }
 
         $result = $run->withLock(function () use ($run, $plates): array {
@@ -270,13 +309,25 @@ class RaceController extends Controller
      */
     private function response(Run $run, array $result, int $status = 200): JsonResponse
     {
+        $match = $run->lobbyMatch;
+
         return response()->json([
             ...$result,
             'chars' => $run->hasStarted() ? $run->plateLetters() : [],
             'score' => $run->score,
             'round' => $run->plate_number,
             'achievements' => [],
+            'first' => $match?->isFirstWins() ? [
+                'ends_in_ms' => $this->plateEndsInMs($match),
+                'locked' => ! $this->firstWins->canAnswer($run, $match),
+            ] : null,
         ], $status);
+    }
+
+    /** "First wins": until the current plate stops taking answers. */
+    private function plateEndsInMs(LobbyMatch $match): int
+    {
+        return $match->isFirstWins() ? max(0, (int) now()->diffInMilliseconds($match->plateEndsAt(), false)) : 0;
     }
 
     /** "Rounds": put the run on the round's plate. */

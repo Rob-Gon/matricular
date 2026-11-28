@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LobbyFormats;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,9 @@ use Illuminate\Support\Carbon;
  * @property LobbyFormats $format
  * @property array<string, mixed> $settings
  * @property list<string> $plates
+ * @property int $plate_number
+ * @property Carbon|null $plate_started_at
+ * @property Carbon|null $plate_closes_at
  * @property Carbon $starts_at
  * @property Carbon $ends_at
  * @property Carbon|null $finished_at
@@ -32,10 +36,16 @@ class LobbyMatch extends Model
     /** Length of the shared plate sequence; a player who gets through it starts over. */
     public const SEQUENCE_LENGTH = 400;
 
+    /** "First wins": pause after a plate closes before the next one, so everyone sees who took it. */
+    public const FIRST_PAUSE_MS = 1000;
+
+    /** "First wins": the plate waits at most this long for a word still being judged. */
+    public const ANSWER_STALE_SECONDS = 5;
+
     /**
      * @var list<string>
      */
-    protected $fillable = ['lobby_id', 'format', 'settings', 'plates', 'starts_at', 'ends_at', 'finished_at'];
+    protected $fillable = ['lobby_id', 'format', 'settings', 'plates', 'plate_number', 'plate_started_at', 'plate_closes_at', 'starts_at', 'ends_at', 'finished_at'];
 
     /**
      * @return array<string, string>
@@ -50,6 +60,35 @@ class LobbyMatch extends Model
             'ends_at' => 'datetime',
             'finished_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Stored with milliseconds: "first wins" orders answers by arrival.
+     *
+     * @return Attribute<Carbon|null, Carbon|null>
+     */
+    protected function plateStartedAt(): Attribute
+    {
+        return self::milliseconds();
+    }
+
+    /**
+     * @return Attribute<Carbon|null, Carbon|null>
+     */
+    protected function plateClosesAt(): Attribute
+    {
+        return self::milliseconds();
+    }
+
+    /**
+     * @return Attribute<Carbon|null, Carbon|null>
+     */
+    private static function milliseconds(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value === null ? null : Carbon::parse($value),
+            set: fn (?Carbon $value) => $value?->format('Y-m-d H:i:s.v'),
+        );
     }
 
     /**
@@ -79,6 +118,51 @@ class LobbyMatch extends Model
     public function isRounds(): bool
     {
         return $this->format === LobbyFormats::ROUNDS;
+    }
+
+    public function isFirstWins(): bool
+    {
+        return $this->format === LobbyFormats::FIRST;
+    }
+
+    public function plateCount(): int
+    {
+        return (int) ($this->settings['plates'] ?? 1);
+    }
+
+    public function plateSeconds(): int
+    {
+        return (int) ($this->settings['plate_seconds'] ?? 30);
+    }
+
+    public function tieWindowMs(): int
+    {
+        return (int) ($this->settings['tie_window_ms'] ?? 0);
+    }
+
+    /** "First wins": when the current plate runs out of time. */
+    public function plateLimitAt(): Carbon
+    {
+        return ($this->plate_started_at ?? $this->starts_at)->copy()->addSeconds($this->plateSeconds());
+    }
+
+    /** "First wins": when the current plate stops taking answers (taken plus the tie window, failed by everyone, or out of time). */
+    public function plateEndsAt(): Carbon
+    {
+        $limit = $this->plateLimitAt();
+
+        return $this->plate_closes_at !== null && $this->plate_closes_at->lessThan($limit) ? $this->plate_closes_at : $limit;
+    }
+
+    /** "First wins": who took this plate first, if anyone. */
+    public function plateTakenBy(string $plate): ?string
+    {
+        $run = $this->runs()
+            ->join('run_words', 'run_words.run_id', '=', 'runs.id')
+            ->where('run_words.plate', $plate)->where('run_words.valid', true)
+            ->orderBy('run_words.id')->select('runs.*')->with('user:id,name')->first();
+
+        return $run?->user->name;
     }
 
     public function roundCount(): int

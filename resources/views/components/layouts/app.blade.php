@@ -108,7 +108,6 @@
                 <li><a class="hover:text-mustard" href="{{ route('credits.view') }}">Créditos</a></li>
                 <li><a class="hover:text-mustard" href="https://github.com/Rob-Gon" rel="me noopener">GitHub</a></li>
                 <li><a class="hover:text-mustard" href="https://www.linkedin.com/in/roberto-gonzalez-web-dev/" rel="me noopener">LinkedIn</a></li>
-                <li><a class="hover:text-mustard" href="https://www.instagram.com/robertognzlz_/" rel="me noopener">Instagram</a></li>
             </ul>
         </div>
     </footer>

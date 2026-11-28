@@ -87,18 +87,13 @@ class RaceTest extends TestCase
         $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable();
     }
 
-    public function test_a_race_needs_two_ready_players_and_the_race_format(): void
+    public function test_a_race_needs_two_ready_players(): void
     {
         [$lobby, $host] = $this->readyLobby(guests: 0);
         $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable()->assertJsonValidationErrors('start');
 
         [$lobby, $host, [$guest]] = $this->readyLobby();
         app(LobbyManager::class)->setReady($lobby, $guest, false);
-        $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable();
-
-        // "First wins" is not playable yet.
-        app(LobbyManager::class)->setRules($lobby, LobbyFormats::FIRST, LobbyFormats::FIRST->defaults());
-        app(LobbyManager::class)->setReady($lobby, $guest, true);
         $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertUnprocessable();
 
         $this->assertDatabaseCount('lobby_matches', 0);

@@ -115,6 +115,11 @@ export default (config) => ({
         await import('./echo');
         window.Echo.join(`lobby.${config.lobbyId}`)
             .listen('.race.scored', ({ id, score }) => this.updateScore(id, score))
+            // "First wins": handed to the game screen, with the winner's name from the scoreboard.
+            .listen('.race.plate', (data) => {
+                const detail = { ...data, mine: data.winner === this.me, winnerName: this.standings.find((row) => row.id === data.winner)?.name ?? null };
+                window.dispatchEvent(new CustomEvent('first-plate', { detail }));
+            })
             .listen('.lobby.updated', (state) => {
                 if (state.closed) {
                     window.location.assign(`${config.urls.lobby}?cerrada=1`);

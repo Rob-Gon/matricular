@@ -38,7 +38,6 @@ class RaceManager
 
             $problem = match (true) {
                 $lobby->status !== Lobby::STATUS_WAITING => 'La partida ya ha empezado.',
-                $lobby->format === LobbyFormats::FIRST => 'Ese formato todavía no se puede jugar. Elige «Carrera» o «Rondas» en las reglas.',
                 $players->count() < self::MIN_PLAYERS => 'Hacen falta al menos '.self::MIN_PLAYERS.' jugadores.',
                 $players->contains('ready', false) => 'Todos tienen que estar listos.',
                 default => null,
@@ -54,8 +53,14 @@ class RaceManager
             // Whole seconds, like the runs' end times.
             $startsAt = now()->startOfSecond()->addSeconds(LobbyMatch::LIGHTS_SECONDS + 1);
             $rounds = $lobby->format === LobbyFormats::ROUNDS;
-            // Rounds follow each other without a break, so the match lasts every round back to back.
-            $seconds = $rounds ? (int) $settings['rounds'] * (int) $settings['round_seconds'] : (int) $settings['countdown_seconds'];
+            $first = $lobby->format === LobbyFormats::FIRST;
+            $seconds = match ($lobby->format) {
+                // Rounds follow each other without a break, so the match lasts every round back to back.
+                LobbyFormats::ROUNDS => (int) $settings['rounds'] * (int) $settings['round_seconds'],
+                // Plates usually close early; this is the longest it can last (every plate run out, paused and waiting for a word).
+                LobbyFormats::FIRST => (int) $settings['plates'] * ((int) $settings['plate_seconds'] + 1 + LobbyMatch::ANSWER_STALE_SECONDS),
+                default => (int) $settings['countdown_seconds'],
+            };
             $endsAt = $startsAt->copy()->addSeconds($seconds);
 
             $match = LobbyMatch::create([
@@ -63,7 +68,12 @@ class RaceManager
                 'format' => $lobby->format,
                 'settings' => $settings,
                 // One plate per round, never repeated, so "said in this round" is "said on this plate".
-                'plates' => $rounds ? $this->sequence($letterSet, $ordered, (int) $settings['rounds'], distinct: true) : $this->sequence($letterSet, $ordered),
+                'plates' => match ($lobby->format) {
+                    LobbyFormats::ROUNDS => $this->sequence($letterSet, $ordered, (int) $settings['rounds'], distinct: true),
+                    LobbyFormats::FIRST => $this->sequence($letterSet, $ordered, (int) $settings['plates'], distinct: true),
+                    default => $this->sequence($letterSet, $ordered),
+                },
+                'plate_started_at' => $first ? $startsAt : null,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
             ]);
@@ -76,7 +86,7 @@ class RaceManager
                     'mode' => GameModes::CONTRARELOJ->value,
                     'letter_set' => $letterSet,
                     'ordered' => $ordered,
-                    'countdown_time' => $rounds ? null : $settings['countdown_time'],
+                    'countdown_time' => $rounds || $first ? null : $settings['countdown_time'],
                     'countdown_seconds' => $seconds,
                     'plate' => $match->plateAt(0),
                     'plate_number' => 0,

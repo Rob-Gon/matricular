@@ -233,6 +233,14 @@ class Run extends Model
         return $this->runWords()->where('valid', true)->where('key', $key)->exists();
     }
 
+    /** "First wins": one try per plate. Repeated words do not use it up. */
+    public function hasTriedPlate(string $plate): bool
+    {
+        return $this->runWords()->where('plate', $plate)
+            ->where(fn (Builder $query) => $query->where('valid', true)->orWhereNotIn('reason', RunWord::NEUTRAL_REASONS))
+            ->exists();
+    }
+
     /**
      * @param  list<string>  $categories  parts of speech of the word
      */
