@@ -120,7 +120,7 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 ### PR 1 · `feat/achievements-v2`
 - [x] Word achievements see every attempt (`WordPlay`: run, attempt, shared history loaded once); accepted words store their parts of speech (`run_words.categories`)
 - [x] New: "Sustantívame / Adjetívame / Verbéame esta" (10 nouns / adjectives / verbs in one run), "Murciégalo" (five vowels), "Abracadabra" (one vowel at least four times)
-- [x] New hidden: "Abro hilo" (noun, adjective and verb accepted in a row, any order), "Más malo que pegarle a un padre" (run ends below zero), "Buen intento, perro" / "Ratita de la RAE" (trap words `pneumonoultramicroscopicsilicovolcanoconiosis` / `electroencefalografista`: refused even if a dictionary has them, −5, never learned)
+- [x] New hidden: "Abro hilo" (noun, adjective and verb accepted in a row, any order), "Más malo que pegarle a un padre" (run ends below zero), "Buen intento, perro" / "Raetita" (trap words `pneumonoultramicroscopicsilicovolcanoconiosis` / `electroencefalografista`: refused even if a dictionary has them, −5, never learned)
 - [x] Palindrome renamed "Se es o no se es"; "Matriculando fuerte" (500) only counts in countdowns
 - [x] Run achievements for countdowns that expire with the tab closed (done in F3: the summary closes the run)
 

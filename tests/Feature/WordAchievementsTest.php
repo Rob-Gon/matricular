@@ -120,7 +120,7 @@ class WordAchievementsTest extends TestCase
             ->assertJsonFragment(['key' => 'trap_pneumono', 'name' => 'Buen intento, perro']);
         $this->play($run, 'Electroencefalografista', 'LCT')
             ->assertJson(['success' => false, 'score' => -10])
-            ->assertJsonFragment(['key' => 'trap_electro', 'name' => 'Ratita de la RAE']);
+            ->assertJsonFragment(['key' => 'trap_electro', 'name' => 'Raetita']);
 
         Http::assertNothingSent();
         $this->assertDatabaseMissing('words', ['key' => 'PNEUMONOULTRAMICROSCOPICSILICOVOLCANOCONIOSIS']);

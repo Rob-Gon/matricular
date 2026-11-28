@@ -147,7 +147,7 @@ return [
     ],
     [
         'key' => 'trap_electro',
-        'name' => 'Ratita de la RAE',
+        'name' => 'Raetita',
         'description' => 'Prueba suerte con «electroencefalografista»',
         'icon' => 'mouse',
         'hidden' => true,
