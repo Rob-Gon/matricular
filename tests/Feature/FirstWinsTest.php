@@ -81,7 +81,7 @@ class FirstWinsTest extends TestCase
     {
         [$lobby, $host] = $this->startedMatch();
 
-        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertOk()->assertDontSee('BRC')->assertSee('Matrícula');
+        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertOk()->assertDontSee('BRC')->assertSee('Matrícula')->assertSee('¡Pita!')->assertSee('Bocinas y gritos de los demás');
         $this->sync($host, $lobby)->assertStatus(409)->assertJsonMissingPath('chars');
         $this->word($host, $lobby, 'barco')->assertJsonPath('success', false)->assertJsonPath('chars', [])->assertJsonPath('score', 0);
 

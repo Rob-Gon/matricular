@@ -58,6 +58,25 @@
                     bajo licencia <a class="underline hover:text-plate" href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener">CC BY 4.0</a>.
                     Las pistas se han convertido a MP3 y se ha igualado su volumen.
                 </p>
+                <p>
+                    Bocinas de <a class="underline hover:text-plate" href="https://freesound.org" rel="noopener">Freesound</a>:
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/19026/" rel="noopener">«claxon»</a>, de han1;
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/431396/" rel="noopener">«car horn»</a>, de mariadrrs;
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/73168/" rel="noopener">«Car Horns»</a>, de inchadney
+                    (las tres bajo <a class="underline hover:text-plate" href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener">CC BY 4.0</a>), y
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/435497/" rel="noopener">«Car Horn Honk»</a>, de etcd_09
+                    (<a class="underline hover:text-plate" href="https://creativecommons.org/licenses/by/3.0/deed.es" rel="noopener">CC BY 3.0</a>).
+                    De dominio público (<a class="underline hover:text-plate" href="https://creativecommons.org/publicdomain/zero/1.0/deed.es" rel="noopener">CC0 1.0</a>):
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/178402/" rel="noopener">«honk2»</a>, de genel;
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/423990/" rel="noopener">«Car horn beep beep two beeps honk honk»</a>, de AmishRob;
+                    <a class="underline hover:text-plate" href="https://freesound.org/s/434878/" rel="noopener">«Car Honking»</a>, de MicktheMicGuy, y
+                    <a class="underline hover:text-plate" href="https://bigsoundbank.com/horn-3-s3506.html" rel="noopener">«Horn 3»</a>, de BigSoundBank.
+                    Se han recortado y se ha igualado su volumen.
+                </p>
+                <p>
+                    Sonido de las reacciones: <a class="underline hover:text-plate" href="https://freesound.org/s/221091/" rel="noopener">«cartoon pop or drip»</a>,
+                    de AlaskaRobotics (CC0 1.0). Los gritos de conductor enfadado son grabaciones propias.
+                </p>
             </section>
         </article>
     </div>

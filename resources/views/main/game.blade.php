@@ -119,6 +119,9 @@
                     Comprobar <span class="kbd max-sm:hidden" aria-hidden="true">Intro</span>
                 </button>
             </div>
+            @if ($race)
+                @include('lobbies.partials.reactions', ['after' => '$refs.word?.focus()'])
+            @endif
             <div class="flex flex-wrap items-center justify-between gap-4">
                 @if ($race['canSkip'] ?? true)
                     <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over || waiting">
@@ -128,7 +131,7 @@
                 @if (! $countdownTotal)
                     <button type="button" class="btn btn-danger" @click="$refs.confirmEnd.showModal()" :disabled="over">Terminar partida</button>
                 @endif
-                <x-sound-controls class="ml-auto" />
+                <x-sound-controls class="ml-auto" :horns="(bool) $race" />
             </div>
         </form>
 

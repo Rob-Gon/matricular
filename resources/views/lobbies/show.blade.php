@@ -16,6 +16,9 @@
             'kick' => route('lobbies.kick', $lobby),
             'start' => route('lobbies.start', $lobby),
             'race' => route('lobbies.race', $lobby),
+            'react' => route('lobbies.react', $lobby),
+            'horn' => route('lobbies.horn', $lobby),
+            'shout' => route('lobbies.shout', $lobby),
         ],
     ];
 @endphp
@@ -63,6 +66,9 @@
                                     :aria-label="'Expulsar a ' + player.name"
                                     @click="askKick(player)"
                                 >✕</button>
+                                <template x-for="bubble in bubbleFor(player.id)" :key="bubble.key">
+                                    <span aria-hidden="true" class="reaction-bubble absolute top-0 left-1/2 z-10 text-3xl" x-text="bubble.emoji"></span>
+                                </template>
                                 <svg aria-hidden="true" viewBox="0 0 64 96" class="h-16 w-11" :class="connected(player) ? '' : 'opacity-40'">
                                     <rect x="4" y="12" width="10" height="20" rx="4" fill="#000000" /><rect x="50" y="12" width="10" height="20" rx="4" fill="#000000" />
                                     <rect x="4" y="64" width="10" height="20" rx="4" fill="#000000" /><rect x="50" y="64" width="10" height="20" rx="4" fill="#000000" />
@@ -102,6 +108,10 @@
                         <button type="button" class="btn" x-show="!isHost" :class="mine?.ready ? '' : 'btn-primary'" :disabled="busy" @click="toggleReady()">
                             <span x-text="mine?.ready ? 'Ya no estoy listo' : '¡Estoy listo!'">¡Estoy listo!</span>
                         </button>
+                        <div class="flex w-full flex-wrap items-end justify-between gap-4">
+                            @include('lobbies.partials.reactions')
+                            <x-sound-controls horns />
+                        </div>
                     </div>
                 </section>
 

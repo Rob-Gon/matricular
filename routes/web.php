@@ -4,6 +4,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\LobbyController;
+use App\Http\Controllers\LobbyReactionController;
 use App\Http\Controllers\RaceController;
 use App\Http\Controllers\ScoreController;
 use App\Models\Run;
@@ -90,6 +91,13 @@ Route::middleware('auth')->group(function () {
             Route::post('/{lobby}/color', 'color')->name('color');
             Route::put('/{lobby}/rules', 'rules')->name('rules');
             Route::post('/{lobby}/kick', 'kick')->name('kick');
+        });
+
+        // Quick reactions, the horn and the shout, on the grid and during a match
+        Route::controller(LobbyReactionController::class)->group(function () {
+            Route::post('/{lobby}/reactions', 'react')->middleware('throttle:reactions')->name('react');
+            Route::post('/{lobby}/horn', 'horn')->middleware('throttle:horn')->name('horn');
+            Route::post('/{lobby}/shout', 'shout')->middleware('throttle:shout')->name('shout');
         });
 
         // Parallel race

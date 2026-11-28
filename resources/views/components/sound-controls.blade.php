@@ -1,4 +1,5 @@
-{{-- Sound settings (effects, music, volume), stored per browser by the "sound" Alpine store. --}}
+{{-- Sound settings (effects, music, volume, other players' horns and shouts), stored per browser by the "sound" Alpine store. --}}
+@props(['horns' => false])
 <details {{ $attributes->class('relative') }} x-data @keydown.escape="$el.open = false">
     <summary class="btn btn-sm list-none [&::-webkit-details-marker]:hidden">
         <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -17,6 +18,12 @@
             <input type="checkbox" class="size-6 accent-plate" :checked="$store.sound.music" @change="$store.sound.set('music', $event.target.checked)">
             Música
         </label>
+        @if ($horns)
+            <label class="flex min-h-11 items-center gap-3 text-lg font-bold">
+                <input type="checkbox" class="size-6 accent-plate" :checked="$store.sound.horns" @change="$store.sound.set('horns', $event.target.checked)">
+                Bocinas y gritos de los demás
+            </label>
+        @endif
         <label class="flex flex-col gap-2 text-lg font-bold">
             Volumen
             <input type="range" min="0" max="1" step="0.05" class="accent-plate" :value="$store.sound.volume" @input="$store.sound.set('volume', Number($event.target.value))">

@@ -112,6 +112,9 @@ class RaceController extends Controller
                     'end' => route('lobbies.race.end', $lobby),
                     'summary' => route('lobbies.results', $lobby),
                     'lobby' => route('lobbies.index'),
+                    'react' => route('lobbies.react', $lobby),
+                    'horn' => route('lobbies.horn', $lobby),
+                    'shout' => route('lobbies.shout', $lobby),
                 ],
             ],
         ]);

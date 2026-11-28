@@ -5,7 +5,8 @@ import { Howl, Howler } from 'howler';
 // and the game starts the music from its first keypress or click.
 
 const STORAGE_KEY = 'matricular.sound';
-const DEFAULTS = { effects: true, music: true, volume: 0.7 };
+// horns: whether other players' horns and shouts sound (your own always do while effects are on).
+const DEFAULTS = { effects: true, music: true, volume: 0.7, horns: true };
 const MUSIC_LEVEL = 0.45; // background music sits under the effects
 const FADE_MS = 1500;
 // The finished-game page picks the track up where the game page left it.
@@ -14,6 +15,12 @@ const HANDOFF_MAX_AGE_MS = 30_000;
 
 const effectFiles = import.meta.glob('../sounds/sfx/*.{ogg,mp3}', { eager: true, query: '?url', import: 'default' });
 const musicFiles = import.meta.glob('../sounds/music/*.{ogg,mp3}', { eager: true, query: '?url', import: 'default' });
+// Multiplayer horns and shouts: any file dropped in these folders joins its set. Without files a horn
+// is synthesised and a shout stays silent.
+const callFiles = {
+    horn: import.meta.glob('../sounds/horns/*.{ogg,mp3}', { eager: true, query: '?url', import: 'default' }),
+    shout: import.meta.glob('../sounds/shouts/*.{ogg,mp3}', { eager: true, query: '?url', import: 'default' }),
+};
 
 // Groups "name.ogg" + "name.mp3" into { name: [ogg, mp3] }; Howler picks the first format the browser plays.
 const bySound = (files) => {
@@ -37,6 +44,24 @@ const loadEffects = () => {
     );
     return effects;
 };
+const calls = {};
+const loadCalls = (kind) => {
+    // Sorted by name, so the same number picks the same sound in every browser.
+    calls[kind] ??= Object.entries(bySound(callFiles[kind]))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([, src]) => new Howl({ src, preload: true }));
+    return calls[kind];
+};
+const HORN_SYNTH_MS = 600;
+// A sound that never reports its end (audio still locked, a failed load) frees its button after this.
+const CALL_MAX_MS = 6000;
+// Synthesised horns when there are no files: two notes a third apart, like a real car horn.
+const HORN_NOTES = [
+    [349, 440],
+    [392, 494],
+    [311, 392],
+    [440, 554],
+];
 const playlist = Object.values(bySound(musicFiles));
 let track = null;
 let trackIndex = Math.floor(Math.random() * Math.max(playlist.length, 1));
@@ -66,7 +91,7 @@ export default () => ({
 
     set(key, value) {
         this[key] = value;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ effects: this.effects, music: this.music, volume: this.volume }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ effects: this.effects, music: this.music, volume: this.volume, horns: this.horns }));
 
         if (key === 'volume') {
             Howler.volume(value);
@@ -79,9 +104,16 @@ export default () => ({
         loadEffects();
     },
 
-    play(name) {
-        if (this.effects) {
-            loadEffects()[name]?.play();
+    // rate: playback speed, which also shifts the pitch (1 = as recorded).
+    play(name, rate = 1) {
+        if (!this.effects) {
+            return;
+        }
+
+        const howl = loadEffects()[name];
+        const id = howl?.play();
+        if (id !== undefined && rate !== 1) {
+            howl.rate(rate, id);
         }
     },
 
@@ -118,6 +150,53 @@ export default () => ({
             osc.start(now);
             osc.stop(now + 1.25);
         }
+    },
+
+    // A player's horn or shout ($kind): $seed comes from the server, so everyone hears the same one.
+    // Other players' horns and shouts can be muted in the sound menu. Returns a promise that settles
+    // when the sound ends (right away when nothing plays), so the button waits for it.
+    call(kind, seed, mine = false) {
+        if (!this.effects || (!mine && !this.horns)) {
+            return Promise.resolve();
+        }
+
+        const files = loadCalls(kind);
+        if (files.length > 0) {
+            const howl = files[seed % files.length];
+            return new Promise((resolve) => {
+                const id = howl.play();
+                howl.once('end', resolve, id);
+                howl.once('playerror', resolve, id);
+                setTimeout(resolve, CALL_MAX_MS);
+            });
+        }
+
+        const ctx = Howler.ctx;
+        if (kind !== 'horn' || !ctx || ctx.state !== 'running' || this.volume <= 0) {
+            return Promise.resolve();
+        }
+
+        const now = ctx.currentTime;
+        const out = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1800;
+        out.gain.setValueAtTime(0.0001, now);
+        out.gain.exponentialRampToValueAtTime(0.35 * this.volume, now + 0.03);
+        out.gain.setValueAtTime(0.35 * this.volume, now + 0.42);
+        out.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+        filter.connect(out).connect(ctx.destination);
+
+        for (const frequency of HORN_NOTES[seed % HORN_NOTES.length]) {
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = frequency;
+            osc.connect(filter);
+            osc.start(now);
+            osc.stop(now + HORN_SYNTH_MS / 1000);
+        }
+
+        return new Promise((resolve) => setTimeout(resolve, HORN_SYNTH_MS));
     },
 
     // Traffic-light beep, synthesised like the engine: short for each red lamp, long and high for green.
