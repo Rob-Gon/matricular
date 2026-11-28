@@ -1,5 +1,6 @@
 {{-- Sound settings (effects, music, volume, other players' horns and shouts), stored per browser by the "sound" Alpine store. --}}
-@props(['horns' => false])
+{{-- $drop: where the menu opens, "up" (button at the bottom of a card) or "down" (button in a top bar). --}}
+@props(['horns' => false, 'drop' => 'up'])
 <details {{ $attributes->class('relative') }} x-data @keydown.escape="$el.open = false">
     <summary class="btn btn-sm list-none [&::-webkit-details-marker]:hidden">
         <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -9,7 +10,7 @@
         </svg>
         Sonido
     </summary>
-    <div class="paper absolute right-0 bottom-full z-30 mb-3 flex w-64 flex-col gap-4 p-5 text-ink">
+    <div @class(['paper absolute right-0 z-30 flex w-64 flex-col gap-4 p-5 text-ink', 'bottom-full mb-3' => $drop === 'up', 'top-full mt-3' => $drop === 'down'])>
         <label class="flex min-h-11 items-center gap-3 text-lg font-bold">
             <input type="checkbox" class="size-6 accent-plate" :checked="$store.sound.effects" @change="$store.sound.set('effects', $event.target.checked)">
             Efectos

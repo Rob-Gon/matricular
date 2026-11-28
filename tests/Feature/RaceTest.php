@@ -234,6 +234,28 @@ class RaceTest extends TestCase
         $this->actingAs($guest)->get(route('lobbies.show', $lobby))->assertOk();
     }
 
+    public function test_revancha_takes_the_player_back_to_the_grid_already_ready(): void
+    {
+        [$lobby, $host, [$guest, $quitter], $match] = $this->startedRace(guests: 2);
+        // Nobody scores: shared positions, so no tiebreak keeps the lobby playing.
+        $match->update(['settings' => [...$match->settings, 'tie_resolution' => 'shared']]);
+        // Ready only counted for the match that started.
+        $this->assertSame(0, $lobby->players()->where('user_id', '!=', $host->id)->where('ready', true)->count());
+
+        $this->travel(120 + Run::LATENCY_GRACE_SECONDS + 1)->seconds();
+        $this->actingAs($host)->get(route('lobbies.results', $lobby))->assertOk()->assertSee(route('lobbies.rematch', $lobby));
+        $this->assertSame(Lobby::STATUS_WAITING, $lobby->fresh()?->status);
+
+        $this->actingAs($guest)->post(route('lobbies.rematch', $lobby))->assertRedirect(route('lobbies.show', $lobby));
+
+        $ready = $lobby->players()->pluck('ready', 'user_id');
+        $this->assertTrue((bool) $ready[$guest->id]);
+        $this->assertFalse((bool) $ready[$quitter->id], 'a player who did not press Revancha stays not ready');
+        Event::assertDispatched(LobbyUpdated::class, fn (LobbyUpdated $event) => collect($event->state['players'] ?? [])->firstWhere('id', $guest->id)['ready'] ?? false);
+
+        $this->actingAs(User::factory()->create())->post(route('lobbies.rematch', $lobby))->assertForbidden();
+    }
+
     public function test_equal_scores_share_the_position(): void
     {
         [, , , $match] = $this->startedRace(guests: 2);

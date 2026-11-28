@@ -291,6 +291,8 @@ export default (config) => ({
             return;
         }
 
+        // Half a word typed for the old plate is useless for the new one (another player may have taken it).
+        this.word = '';
         this.digits = randomDigits();
 
         // Restart the drop animation on the same element.

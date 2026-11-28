@@ -54,11 +54,15 @@
                     <li class="rounded-full border-[3px] border-ink bg-celluloid px-3 py-1 xl:bg-enamel text-base font-bold text-ink sm:px-4 sm:py-2 sm:text-xl">{{ $setting }}</li>
                 @endforeach
             </ul>
-            @if ($countdownTotal)
-                <div class="paper px-3 py-2 sm:px-4 sm:py-3">
-                    <x-fuel-gauge :total="$countdownTotal" :remaining="$countdownRemaining" model="remaining" class="max-sm:w-28" />
-                </div>
-            @endif
+            {{-- Small screens stack the sound button under the clock, so the score and the clock share a row. --}}
+            <div class="flex items-start gap-3 max-sm:flex-col max-sm:items-end max-sm:gap-2">
+                @if ($countdownTotal)
+                    <div class="paper px-3 py-2 sm:px-4 sm:py-3">
+                        <x-fuel-gauge :total="$countdownTotal" :remaining="$countdownRemaining" model="remaining" class="max-sm:w-28" />
+                    </div>
+                @endif
+                <x-sound-controls drop="down" :horns="(bool) $race" />
+            </div>
         </div>
 
         <div class="flex w-full max-w-6xl flex-wrap items-end justify-center gap-8 px-6 xl:mt-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_min(600px,calc(100dvh-330px))_minmax(0,1fr)] xl:gap-6">
@@ -122,6 +126,7 @@
             @if ($race)
                 @include('lobbies.partials.reactions', ['after' => '$refs.word?.focus()'])
             @endif
+            @if (($race['canSkip'] ?? true) || ! $countdownTotal)
             <div class="flex flex-wrap items-center justify-between gap-4">
                 @if ($race['canSkip'] ?? true)
                     <button type="button" class="btn" aria-keyshortcuts="Control" :aria-keyshortcuts="skipKey" @click="skip()" :disabled="busy || over || waiting">
@@ -131,8 +136,8 @@
                 @if (! $countdownTotal)
                     <button type="button" class="btn btn-danger" @click="$refs.confirmEnd.showModal()" :disabled="over">Terminar partida</button>
                 @endif
-                <x-sound-controls class="ml-auto" :horns="(bool) $race" />
             </div>
+            @endif
         </form>
 
         @if (! $countdownTotal)

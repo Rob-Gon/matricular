@@ -96,6 +96,8 @@ class RaceManager
                 ]);
             }
 
+            // "Ready" counts for this match only: afterwards "Revancha" marks each player who comes back.
+            $lobby->players()->where('user_id', '!=', $lobby->host_id)->update(['ready' => false]);
             $lobby->update(['status' => Lobby::STATUS_PLAYING, 'last_activity_at' => now()]);
             event(LobbyUpdated::from($lobby->fresh() ?? $lobby));
 
@@ -138,7 +140,7 @@ class RaceManager
     /**
      * After the race: closes a tiebreak whose time is up, starts the next one while tied players
      * share a podium position, and otherwise sends the lobby back to the grid for the rematch
-     * (everyone but the host confirms "ready" again). Safe to call any number of times.
+     * (players are ready once they press "Revancha"). Safe to call any number of times.
      */
     public function settle(LobbyMatch $match): void
     {
@@ -176,7 +178,6 @@ class RaceManager
             $lobby = $match->lobby;
             if ($lobby !== null && $lobby->status === Lobby::STATUS_PLAYING && $lobby->latestMatch()?->is($match)) {
                 $lobby->update(['status' => Lobby::STATUS_WAITING, 'last_activity_at' => now()]);
-                $lobby->players()->where('user_id', '!=', $lobby->host_id)->update(['ready' => false]);
                 event(LobbyUpdated::from($lobby->fresh() ?? $lobby));
             }
         });

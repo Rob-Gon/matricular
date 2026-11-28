@@ -100,7 +100,8 @@ class LobbyTest extends TestCase
     {
         $lobby = $this->lobby();
 
-        $this->actingAs($lobby->host)->get(route('lobbies.show', $lobby))->assertOk()->assertSee('Parrilla de salida');
+        $this->actingAs($lobby->host)->get(route('lobbies.show', $lobby))->assertOk()->assertSee('Parrilla de salida')
+            ->assertSee('Margen para respuestas simultáneas')->assertSee('Empate a puntos al final');
         $this->actingAs(User::factory()->create())->get(route('lobbies.show', $lobby))
             ->assertRedirect(route('lobbies.index', ['codigo' => $lobby->code]));
     }
