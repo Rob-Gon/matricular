@@ -84,8 +84,8 @@ class CustomCountdownTest extends TestCase
 
         $names = fn (array $query) => $this->actingAs($preset->user)
             ->get(route('scores.view', $query))
-            ->viewData('topScores')
-            ->pluck('name')
+            ->viewData('topRuns')
+            ->pluck('user.name')
             ->all();
 
         $this->assertSame([$preset->user->name], $names([]));

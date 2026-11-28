@@ -167,7 +167,7 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] "Revancha" marks the player ready (`POST /lobbies/{code}/rematch`) and goes back to the grid; "ready" is cleared when a match starts, so players who do not come back stay not ready
 - [x] Clearer tie options: "Margen para respuestas simultáneas" (first wins, same plate) with a help line, and "Empate a puntos al final"
 ### PR 7 · `feat/rankings`
-- [ ] Clasificación with Individual and Multijugador tabs: global top 10, today's top 10 (Europe/Madrid day) and your best games, plus your latest games. A top lists the 10 best games (a player may repeat), by points, showing mode/format, letters and order; filters narrow it (multiplayer also by format)
+- [x] Clasificación with Individual and Multijugador tabs (`?tab=multi`): global top 10, today's top 10 (Europe/Madrid day) and your best games, plus your latest games. A top lists the 10 best games (a player may repeat), by points, showing mode/format, letters and order; filters narrow it (multiplayer by format instead of mode). Multiplayer games rank once their match is over
 ### PR 8 · `feat/multiplayer-polish`
 - [ ] Multiplayer stats (wins, podiums), reconnection, Playwright E2E with several browser contexts
 

@@ -160,7 +160,8 @@ class Run extends Model
     }
 
     /**
-     * The run's settings as short Spanish labels for the game and summary screens.
+     * The run's settings as short Spanish labels for the game, summary and ranking screens. A
+     * multiplayer run starts with its format (load "lobbyMatch" first).
      *
      * @return list<string>
      */
@@ -168,6 +169,7 @@ class Run extends Model
     {
         return [
             match (true) {
+                $this->lobby_match_id !== null => $this->lobbyMatch?->format->shortLabel() ?? 'Multijugador',
                 $this->countdown_time === null => 'Sin límite',
                 $this->isCustomCountdown() => 'Contrarreloj personalizado, '.intdiv((int) $this->countdown_seconds, 60).' min',
                 default => "Contrarreloj, {$this->countdown_time}",
