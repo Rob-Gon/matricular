@@ -130,7 +130,9 @@ class RaceManager
         }
 
         $runs = $match->runs()->get();
+        // A word already scored earlier in the run (free to resend) is no try; idle rows stop a second charge.
         $tried = RunWord::whereIn('run_id', $runs->modelKeys())->whereIn('plate', $plates)
+            ->where(fn ($query) => $query->whereNull('reason')->orWhere('reason', '!=', RunWord::REASON_REPEATED))
             ->get(['run_id', 'plate'])
             ->groupBy('run_id')
             ->map(fn ($words) => $words->pluck('plate')->all());
@@ -158,7 +160,8 @@ class RaceManager
         DB::transaction(function () use ($match): void {
             $match = LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
 
-            if ($match === null || ! $match->isRounds() || $match->starts_at->isFuture()) {
+            // finishIfDue charges the last round just before it sets "finished_at"; after that scores are final.
+            if ($match === null || ! $match->isRounds() || $match->isFinished() || $match->starts_at->isFuture()) {
                 return;
             }
 

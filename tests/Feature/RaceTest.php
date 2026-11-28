@@ -178,12 +178,19 @@ class RaceTest extends TestCase
             ->assertJsonPath('success', true)->assertJsonPath('score', 10);
         $this->assertSame(0, RunWord::where('kind', RunWord::KIND_IDLE)->count());
 
-        // Round 2: nobody tries. The last round is charged when the match closes.
+        // Round 2: resending a word already scored in the run is no try. The last round is charged when the match closes.
+        $this->actingAs($host)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barco', 'round' => 1])->assertJsonPath('score', 10);
         $this->travel(20 + Run::LATENCY_GRACE_SECONDS + 1)->seconds();
         $this->actingAs($guest)->get(route('lobbies.results', $lobby))->assertOk();
         $this->assertTrue($match->fresh()?->isFinished());
         $this->assertEquals([$host->id => 5, $guest->id => 5], $scores());
         $this->assertSame(2, RunWord::where('kind', RunWord::KIND_IDLE)->where('plate', 'MSL')->count());
+
+        // Once the match is over, a word for the last round neither undoes the charge nor brings a new one.
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'misil', 'round' => 1]);
+        $this->actingAs($guest)->postJson(route('lobbies.race.sync', $lobby));
+        $this->assertEquals([$host->id => 5, $guest->id => 5], $scores());
+        $this->assertSame(2, RunWord::where('kind', RunWord::KIND_IDLE)->count());
         $this->actingAs($guest)->get(route('lobbies.show', $lobby))->assertSee('Una ronda sin intentarlo resta 5');
     }
 

@@ -298,6 +298,11 @@ class Run extends Model
     public function forgiveIdle(): void
     {
         $this->withLock(function (): void {
+            // Once the run is over the word is refused, so the charge stands.
+            if ($this->isOver()) {
+                return;
+            }
+
             if ($this->runWords()->where('kind', RunWord::KIND_IDLE)->where('plate', $this->plate)->delete() > 0) {
                 $this->score += self::POINTS_PENALTY;
                 $this->save();
