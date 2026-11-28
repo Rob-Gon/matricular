@@ -81,7 +81,9 @@ class FirstWinsTest extends TestCase
     {
         [$lobby, $host] = $this->startedMatch();
 
-        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertOk()->assertDontSee('BRC')->assertSee('Matrícula')->assertSee('¡Pita!')->assertSee('Bocinas y gritos de los demás');
+        $this->actingAs($host)->get(route('lobbies.race', $lobby))->assertOk()->assertDontSee('BRC')->assertSee('Matrícula')->assertSee('aria-label="Calavera"', false)
+            // Emoji only during the match: horns and shouts stay on the grid.
+            ->assertDontSee('¡Pita!')->assertDontSee('¡Grita!')->assertDontSee('Bocinas y gritos de los demás');
         $this->sync($host, $lobby)->assertStatus(409)->assertJsonMissingPath('chars');
         $this->word($host, $lobby, 'barco')->assertJsonPath('success', false)->assertJsonPath('chars', [])->assertJsonPath('score', 0);
 
@@ -136,6 +138,28 @@ class FirstWinsTest extends TestCase
         $this->travel(LobbyMatch::FIRST_PAUSE_MS)->milliseconds();
         // Passing the plate costs nothing.
         $this->sync($host, $lobby)->assertJsonPath('round', 1)->assertJsonPath('score', -5);
+    }
+
+    public function test_a_plate_nobody_takes_costs_whoever_did_not_try_it(): void
+    {
+        [$lobby, $host, [$tried, $idle], $match] = $this->startedMatch(['plates' => 2, 'tie_resolution' => 'shared'], guests: 2);
+        $this->toGreenLight();
+
+        $this->word($tried, $lobby, 'mesa')->assertJsonPath('score', -5);
+        $this->travel(30_001 + LobbyMatch::FIRST_PAUSE_MS)->milliseconds();
+
+        // Nobody took it: the two who never tried lose what a skip costs; a failed try is not charged twice.
+        $this->sync($host, $lobby)->assertJsonPath('round', 1)->assertJsonPath('score', -5);
+        $this->sync($host, $lobby)->assertJsonPath('score', -5);
+        $scores = fn () => $match->runs()->pluck('score', 'user_id')->all();
+        $this->assertEquals([$host->id => -5, $tried->id => -5, $idle->id => -5], $scores());
+        Event::assertDispatched(RaceScored::class, fn (RaceScored $event) => $event->userId === $idle->id && $event->score === -5);
+
+        // Taken by someone: losing the race to it costs nothing.
+        $this->word($host, $lobby, 'cabra', plate: 1)->assertJsonPath('success', true);
+        $this->travel(150 + LobbyMatch::FIRST_PAUSE_MS)->milliseconds();
+        $this->sync($idle, $lobby)->assertJsonPath('game_over', true);
+        $this->assertEquals([$host->id => 5, $tried->id => -5, $idle->id => -5], $scores());
     }
 
     public function test_a_repeated_word_does_not_use_up_the_try(): void

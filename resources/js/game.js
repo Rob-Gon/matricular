@@ -152,6 +152,11 @@ export default (config) => ({
                     return;
                 }
 
+                // No "Pasamatrícula" in these formats: a plate passed without a try costs the same.
+                if (data.score < this.score) {
+                    this.$store.sound.play('wrong');
+                    this.feedback = { kind: 'fail', text: `No has respondido a tiempo: pierdes ${this.score - data.score} puntos.` };
+                }
                 this.score = data.score;
                 if (this.first) {
                     this.startPlate(data);

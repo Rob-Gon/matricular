@@ -10,6 +10,7 @@ use App\Models\Lobby;
 use App\Models\LobbyMatch;
 use App\Models\MatchTiebreak;
 use App\Models\Run;
+use App\Models\RunWord;
 use App\Models\User;
 use App\Services\LobbyManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -150,6 +151,47 @@ class RaceTest extends TestCase
 
         Event::assertDispatched(RaceScored::class, fn (RaceScored $event) => $event->userId === $guest->id && $event->score === 20);
         $this->assertSame(1, $match->runs()->where('user_id', $guest->id)->firstOrFail()->runWords()->where('reason', 'taken')->count());
+    }
+
+    public function test_a_round_without_a_single_try_costs_the_skip_penalty(): void
+    {
+        [$lobby, $host, [$guest]] = $this->readyLobby();
+        app(LobbyManager::class)->setRules($lobby, LobbyFormats::ROUNDS, [...LobbyFormats::ROUNDS->defaults(), 'rounds' => 2, 'round_seconds' => 20, 'tie_resolution' => 'shared']);
+        app(LobbyManager::class)->setReady($lobby, $guest, true);
+        $this->actingAs($host)->postJson(route('lobbies.start', $lobby))->assertOk();
+        $match = LobbyMatch::firstOrFail();
+        $match->update(['plates' => ['BRC', 'MSL']]);
+        $match->runs()->update(['plate' => 'BRC']);
+        $scores = fn () => $match->runs()->pluck('score', 'user_id')->all();
+        $this->travel(LobbyMatch::LIGHTS_SECONDS + 2)->seconds();
+
+        // Round 1: only the host tries. Whoever reaches round 2 first charges the guest, once.
+        $this->actingAs($host)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barco', 'round' => 0])->assertJsonPath('score', 10);
+        $this->travel(20)->seconds();
+        $this->actingAs($host)->postJson(route('lobbies.race.sync', $lobby))->assertJsonPath('round', 1)->assertJsonPath('score', 10);
+        $this->actingAs($guest)->postJson(route('lobbies.race.sync', $lobby))->assertJsonPath('round', 1)->assertJsonPath('score', -5);
+        $this->assertEquals([$host->id => 10, $guest->id => -5], $scores());
+        Event::assertDispatched(RaceScored::class, fn (RaceScored $event) => $event->userId === $guest->id && $event->score === -5);
+
+        // A word sent just before the change still answers round 1, so the charge is undone.
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barca', 'round' => 0])
+            ->assertJsonPath('success', true)->assertJsonPath('score', 10);
+        $this->assertSame(0, RunWord::where('kind', RunWord::KIND_IDLE)->count());
+
+        // Round 2: resending a word already scored in the run is no try. The last round is charged when the match closes.
+        $this->actingAs($host)->postJson(route('lobbies.race.word', $lobby), ['word' => 'barco', 'round' => 1])->assertJsonPath('score', 10);
+        $this->travel(20 + Run::LATENCY_GRACE_SECONDS + 1)->seconds();
+        $this->actingAs($guest)->get(route('lobbies.results', $lobby))->assertOk();
+        $this->assertTrue($match->fresh()?->isFinished());
+        $this->assertEquals([$host->id => 5, $guest->id => 5], $scores());
+        $this->assertSame(2, RunWord::where('kind', RunWord::KIND_IDLE)->where('plate', 'MSL')->count());
+
+        // Once the match is over, a word for the last round neither undoes the charge nor brings a new one.
+        $this->actingAs($guest)->postJson(route('lobbies.race.word', $lobby), ['word' => 'misil', 'round' => 1]);
+        $this->actingAs($guest)->postJson(route('lobbies.race.sync', $lobby));
+        $this->assertEquals([$host->id => 5, $guest->id => 5], $scores());
+        $this->assertSame(2, RunWord::where('kind', RunWord::KIND_IDLE)->count());
+        $this->actingAs($guest)->get(route('lobbies.show', $lobby))->assertSee('Una ronda sin intentarlo resta 5');
     }
 
     public function test_words_wait_for_the_green_light_then_follow_the_shared_sequence(): void

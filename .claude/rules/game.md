@@ -25,8 +25,8 @@ These replace the old Easy/Medium/Hard difficulty and can be combined:
 Letter set and ordered letters work as in solo. Scoring is the solo one (+10 / −5) in every format.
 
 1. **Parallel race**: every player gets the same seeded plate sequence and advances independently. Highest score at the end wins. Length: any countdown, custom included (1–60 min). "Pasamatrícula" allowed (−5).
-2. **Shared plate rounds**: everyone sees the same plate each round. A word already used by another player in that round does not score (0, not a penalty). Host sets rounds (1–30) and seconds per round (up to 5 min). No "Pasamatrícula".
-3. **First wins**: everyone sees the same plate. The first valid answer takes the round and the plate changes for everybody; wrong answers cost −5. Host sets the number of plates (1–50) and a per-plate limit (default 30 s, 10 s–2 min). The plate also passes, with no penalty, once every player has failed it or the limit runs out. No "Pasamatrícula". Resolve ties atomically on the server (lock or unique constraint), never on the client.
+2. **Shared plate rounds**: everyone sees the same plate each round. A word already used by another player in that round does not score (0, not a penalty). Host sets rounds (1–30) and seconds per round (up to 5 min). No "Pasamatrícula"; instead a round in which a player sends no word at all costs −5 (charged when the round ends; a word sent in time for that round undoes it).
+3. **First wins**: everyone sees the same plate. The first valid answer takes the round and the plate changes for everybody; wrong answers cost −5. Host sets the number of plates (1–50) and a per-plate limit (default 30 s, 10 s–2 min). The plate also passes once every player has failed it (no penalty) or the limit runs out; in that case whoever did not try it loses −5 (a plate someone took costs the others nothing). No "Pasamatrícula". Resolve ties atomically on the server (lock or unique constraint), never on the client.
 
 ## Ties
 - **Near-simultaneous answers ("first wins")**: the server timestamps each accepted word on arrival. The first valid word opens a tie window (lobby option: 0 / 150 / 300 ms, default 150). Every valid word received inside the window also scores; the round closes when the window ends.
@@ -40,6 +40,6 @@ Letter set and ordered letters work as in solo. Scoring is the solo one (+10 / �
 - If the host leaves, the player who has been in the lobby longest becomes host. The host can kick players; a kicked player cannot rejoin that lobby.
 - Each player picks a car colour on the starting grid.
 - "Revancha" restarts the lobby with the same players after a match. A lobby with no activity for 30 minutes closes.
-- Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn ("¡Pita!") and shout ("¡Grita!", the owner's recordings) buttons: a random sound for everyone, each once every 3 s per player (and not before your own sound ends); anyone can mute other players' horns and shouts in the sound menu.
+- Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn ("¡Pita!") and shout ("¡Grita!", the owner's recordings) buttons on the grid only, never during a match (16 players would drown it): a random sound for everyone, each once every 3 s per player (and not before your own sound ends); anyone can mute other players' horns and shouts in the sound menu.
 - End-of-game stats: ranking, longest word, shortest word, fastest answer, most words, accuracy.
 - Multiplayer matches do not count for the solo rankings; they get their own stats (wins, podiums). No multiplayer achievements (owner's choice: platinum must stay reachable playing solo).

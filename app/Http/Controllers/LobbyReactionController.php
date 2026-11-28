@@ -10,8 +10,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Quick reactions, horns and shouts, on the grid and during a match. How often a player may send
- * them is set by the "reactions", "horn" and "shout" rate limiters.
+ * Quick reactions on the grid and during a match; horns and shouts on the grid only. How often a
+ * player may send them is set by the "reactions", "horn" and "shout" rate limiters.
  */
 class LobbyReactionController extends Controller
 {
@@ -34,6 +34,8 @@ class LobbyReactionController extends Controller
     private function broadcast(Request $request, Lobby $lobby, ?string $emoji = null, ?int $horn = null, ?int $shout = null): Response
     {
         Gate::authorize('view', $lobby);
+        // With up to 16 players, horns and shouts mid-match would drown the game.
+        abort_if(($horn ?? $shout) !== null && $lobby->status === Lobby::STATUS_PLAYING, 409, 'Durante la partida no se puede pitar ni gritar.');
 
         // Reacting counts as activity, so a lobby that is only chatting is not closed as idle.
         $lobby->update(['last_activity_at' => now()]);

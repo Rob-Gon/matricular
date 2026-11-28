@@ -139,11 +139,13 @@ class Lobby extends Model
             LobbyFormats::ROUNDS => [
                 ['term' => 'Rondas', 'value' => $s['rounds'].' de '.$s['round_seconds'].' segundos'],
                 ['term' => 'Palabras repetidas', 'value' => 'Si otro ya la dijo en la ronda, no suma'],
+                ['term' => 'Sin responder', 'value' => 'Una ronda sin intentarlo resta '.Run::POINTS_PENALTY],
             ],
             LobbyFormats::FIRST => [
                 ['term' => 'Matrículas', 'value' => $s['plates'].', '.$s['plate_seconds'].' s cada una como máximo'],
                 ['term' => 'Respuestas simultáneas', 'value' => $s['tie_window_ms'] > 0 ? 'Puntúan todos los que acierten en '.$s['tie_window_ms'].' ms' : 'Solo puntúa el primero'],
                 ['term' => 'Si todos fallan', 'value' => 'La matrícula pasa sin quitar puntos'],
+                ['term' => 'Sin responder', 'value' => 'Si nadie se la lleva, quien no lo intentó pierde '.Run::POINTS_PENALTY],
             ],
         };
 

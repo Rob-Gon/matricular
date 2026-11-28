@@ -106,6 +106,20 @@ class LobbyReactionsTest extends TestCase
         Event::assertDispatchedTimes(LobbyReacted::class, 3);
     }
 
+    public function test_horns_and_shouts_wait_for_the_match_to_end_but_emoji_do_not(): void
+    {
+        [$lobby, $host, $guest] = $this->lobby();
+        $lobby->update(['status' => Lobby::STATUS_PLAYING]);
+
+        $this->actingAs($host)->postJson(route('lobbies.horn', $lobby))->assertConflict();
+        $this->actingAs($host)->postJson(route('lobbies.shout', $lobby))->assertConflict();
+        $this->actingAs($guest)->postJson(route('lobbies.react', $lobby), ['emoji' => '🔥'])->assertNoContent();
+        // Outsiders still learn nothing about the lobby.
+        $this->actingAs(User::factory()->create())->postJson(route('lobbies.horn', $lobby))->assertForbidden();
+
+        Event::assertDispatchedTimes(LobbyReacted::class, 1);
+    }
+
     public function test_reactions_are_rate_limited(): void
     {
         [$lobby, $host] = $this->lobby();

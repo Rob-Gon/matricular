@@ -120,7 +120,7 @@ List agreed with the owner on 2026-11-27 (names and descriptions are theirs).
 ### PR 1 · `feat/achievements-v2`
 - [x] Word achievements see every attempt (`WordPlay`: run, attempt, shared history loaded once); accepted words store their parts of speech (`run_words.categories`)
 - [x] New: "Sustantívame / Adjetívame / Verbéame esta" (10 nouns / adjectives / verbs in one run), "Murciégalo" (five vowels), "Abracadabra" (one vowel at least four times)
-- [x] New hidden: "Abro hilo" (noun, adjective and verb accepted in a row, any order), "Más malo que pegarle a un padre" (run ends below zero), "Buen intento, perro" / "Ratita de la RAE" (trap words `pneumonoultramicroscopicsilicovolcanoconiosis` / `electroencefalografista`: refused even if a dictionary has them, −5, never learned)
+- [x] New hidden: "Abro hilo" (noun, adjective and verb accepted in a row, any order), "Más malo que pegarle a un padre" (run ends below zero), "Buen intento, perro" / "Raetita" (trap words `pneumonoultramicroscopicsilicovolcanoconiosis` / `electroencefalografista`: refused even if a dictionary has them, −5, never learned)
 - [x] Palindrome renamed "Se es o no se es"; "Matriculando fuerte" (500) only counts in countdowns
 - [x] Run achievements for countdowns that expire with the tab closed (done in F3: the summary closes the run)
 
@@ -168,7 +168,11 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] Clearer tie options: "Margen para respuestas simultáneas" (first wins, same plate) with a help line, and "Empate a puntos al final"
 ### PR 7 · `feat/rankings`
 - [x] Clasificación with Individual and Multijugador tabs (`?tab=multi`): global top 10, today's top 10 (Europe/Madrid day) and your best games, plus your latest games. A top lists the 10 best games (a player may repeat), by points, showing mode/format, letters and order; filters narrow it (multiplayer by format instead of mode). Multiplayer games rank once their match is over
-### PR 8 · `feat/multiplayer-polish`
+### PR 8 · `feat/idle-penalty-quiet-race`
+- [x] Sound button back on one row on desktop: it hangs under the clock, on the right, without taking room (the clock and the sound button no longer push the top bar into two rows)
+- [x] No "¡Pita!" or "¡Grita!" during a match (emoji reactions stay); the server answers 409 if they are sent while the lobby is playing
+- [x] No-skip formats charge sitting out: a round with no word at all costs −5 (`RaceManager::chargeIdleRounds`, applied by the first client that syncs the next round and when the match closes; a late word for that round undoes it), and in "first wins" a plate nobody took costs −5 to whoever never tried it. Stored as `run_words.kind = idle`; the player sees why their score dropped
+### PR 9 · `feat/multiplayer-polish`
 - [ ] Multiplayer stats (wins, podiums), reconnection, Playwright E2E with several browser contexts
 
 ## F7 – Production

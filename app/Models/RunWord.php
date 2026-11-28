@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * One attempt in a run: a word (valid or not) or a skipped plate.
+ * One attempt in a run: a word (valid or not) or a skipped plate. In "rounds" and "first wins" a
+ * plate passed without a single try is charged like a skip ("idle").
  *
  * @property int $id
  * @property int $run_id
@@ -29,6 +30,8 @@ class RunWord extends Model
     public const KIND_WORD = 'word';
 
     public const KIND_SKIP = 'skip';
+
+    public const KIND_IDLE = 'idle';
 
     public const REASON_MISSING_LETTERS = 'missing_letters';
 
