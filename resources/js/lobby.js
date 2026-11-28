@@ -2,11 +2,14 @@
 // every change arrives as a full "lobby.updated" snapshot and the grid animates from the old layout to
 // the new one (FLIP): new cars drive up into their bay, the cars behind a freed bay move forward.
 
+import reactions from './reactions';
+
 const MOVE_MS = 1000;
 const MIN_PLAYERS = 2;
 const ENTER_MS = 1700;
 
 export default (config) => ({
+    ...reactions(config.urls),
     state: config.state,
     me: config.me,
     present: null,
@@ -26,7 +29,8 @@ export default (config) => ({
             .here((users) => (this.present = users.map((user) => user.id)))
             .joining((user) => this.present?.push(user.id))
             .leaving((user) => (this.present = (this.present ?? []).filter((id) => id !== user.id)))
-            .listen('.lobby.updated', (state) => this.apply(state));
+            .listen('.lobby.updated', (state) => this.apply(state))
+            .listen('.lobby.reaction', (reaction) => this.onReaction(reaction));
     },
 
     destroy() {

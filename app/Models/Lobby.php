@@ -41,6 +41,15 @@ class Lobby extends Model
         '#9FC4BE' => 'Verde agua', '#F07A5C' => 'Coral', '#3A3A36' => 'Asfalto', '#9C7BB8' => 'Lila',
     ];
 
+    /** Quick reactions shown as a bubble over the player's car, with their accessible names. */
+    public const REACTIONS = [
+        '👏' => 'Aplauso', '😂' => 'Risa', '😱' => 'Sorpresa', '🔥' => 'Fuego',
+        '😭' => 'Llanto', '👀' => 'Ojos', '🤯' => 'Cabeza explotando', '💀' => 'Calavera',
+    ];
+
+    /** Seconds a player waits between horns. */
+    public const SOUND_COOLDOWN_SECONDS = 3;
+
     /**
      * @var list<string>
      */

@@ -1,6 +1,8 @@
 // Multiplayer race around the solo game screen: the traffic-light start and the live scoreboard.
 // The server sets the start and end times and every score; this only displays them.
 
+import reactions from './reactions';
+
 const RED = '#C8361F';
 const GREEN = '#3FAE5A';
 const GO_SHOWN_MS = 900;
@@ -101,6 +103,7 @@ export const raceResults = (config) => ({
 });
 
 export default (config) => ({
+    ...reactions(config.urls),
     standings: config.standings,
     me: config.me,
     // null: no traffic light; 0–3: red lamps lit; 'go': green.
@@ -115,6 +118,7 @@ export default (config) => ({
         await import('./echo');
         window.Echo.join(`lobby.${config.lobbyId}`)
             .listen('.race.scored', ({ id, score }) => this.updateScore(id, score))
+            .listen('.lobby.reaction', (reaction) => this.onReaction(reaction))
             // "First wins": handed to the game screen, with the winner's name from the scoreboard.
             .listen('.race.plate', (data) => {
                 const detail = { ...data, mine: data.winner === this.me, winnerName: this.standings.find((row) => row.id === data.winner)?.name ?? null };

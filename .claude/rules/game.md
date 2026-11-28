@@ -40,6 +40,6 @@ Letter set and ordered letters work as in solo. Scoring is the solo one (+10 / �
 - If the host leaves, the player who has been in the lobby longest becomes host. The host can kick players; a kicked player cannot rejoin that lobby.
 - Each player picks a car colour on the starting grid.
 - "Revancha" restarts the lobby with the same players after a match. A lobby with no activity for 30 minutes closes.
-- Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn button: a random horn sound for everyone, once every 5 s per player; anyone can mute other players' horns in the sound menu.
+- Quick reactions: 👏 😂 😱 🔥 😭 👀 🤯 💀 as bubbles over the player's car. Horn ("¡Pita!") and shout ("¡Grita!", the owner's recordings) buttons: a random sound for everyone, each once every 3 s per player (and not before your own sound ends); anyone can mute other players' horns and shouts in the sound menu.
 - End-of-game stats: ranking, longest word, shortest word, fastest answer, most words, accuracy.
 - Multiplayer matches do not count for the solo rankings; they get their own stats (wins, podiums). No multiplayer achievements (owner's choice: platinum must stay reachable playing solo).

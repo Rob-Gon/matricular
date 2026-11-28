@@ -3,11 +3,14 @@
     <h2 id="marcador" class="font-display text-xl">En directo</h2>
     <ol class="flex max-h-[min(26rem,45dvh)] flex-col gap-1.5 overflow-y-auto">
         <template x-for="row in standings" :key="row.id">
-            <li class="grid grid-cols-[1.75rem_1.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] px-2 py-1 text-xl" :class="row.id === me ? 'bg-[#F4D98A]' : ''">
+            <li class="relative grid grid-cols-[1.75rem_1.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] px-2 py-1 text-xl" :class="row.id === me ? 'bg-[#F4D98A]' : ''">
                 <span class="font-black" x-text="row.position + '.º'"></span>
                 <span aria-hidden="true" class="size-[18px] rounded-full border-[3px] border-ink" :style="{ background: row.color }"></span>
                 <span class="truncate font-bold" x-text="row.name + (row.id === me ? ' (tú)' : '')"></span>
                 <span class="font-black tabular-nums" x-text="row.score"></span>
+                <template x-for="bubble in bubbleFor(row.id)" :key="bubble.key">
+                    <span aria-hidden="true" class="reaction-bubble absolute top-1/2 right-12 z-10 -translate-y-1/2 text-2xl" x-text="bubble.emoji"></span>
+                </template>
             </li>
         </template>
     </ol>
