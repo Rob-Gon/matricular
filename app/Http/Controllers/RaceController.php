@@ -131,6 +131,8 @@ class RaceController extends Controller
         }
 
         if ($match->isRounds()) {
+            // Every client asks here when a round starts, so the last round's idle charges show at once.
+            $this->races->chargeIdleRounds($match);
             $this->joinRound($run, $match, $match->currentRound());
         }
 
@@ -165,6 +167,7 @@ class RaceController extends Controller
                     }
 
                     $this->joinRound($run, $match, $round);
+                    $run->forgiveIdle();
                 }
 
                 return $submitWord->handle($run, $request->validated('word'));

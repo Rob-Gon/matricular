@@ -62,6 +62,12 @@ class FirstWins
                 return false;
             }
 
+            $plate = $match->plateAt($match->plate_number);
+            // Nobody took it: whoever did not even try pays like a skip. Losing the race to it costs nothing.
+            if ($match->plateTakenBy($plate) === null) {
+                $this->races->chargeIdle($match, [$plate]);
+            }
+
             $next = $match->plate_number + 1;
 
             if ($next >= $match->plateCount()) {

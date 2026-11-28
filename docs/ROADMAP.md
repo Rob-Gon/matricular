@@ -168,7 +168,11 @@ Rules agreed with the owner on 2026-11-27: `.claude/rules/game.md` (formats, lob
 - [x] Clearer tie options: "Margen para respuestas simultáneas" (first wins, same plate) with a help line, and "Empate a puntos al final"
 ### PR 7 · `feat/rankings`
 - [x] Clasificación with Individual and Multijugador tabs (`?tab=multi`): global top 10, today's top 10 (Europe/Madrid day) and your best games, plus your latest games. A top lists the 10 best games (a player may repeat), by points, showing mode/format, letters and order; filters narrow it (multiplayer by format instead of mode). Multiplayer games rank once their match is over
-### PR 8 · `feat/multiplayer-polish`
+### PR 8 · `feat/idle-penalty-quiet-race`
+- [x] Sound button back on one row on desktop: it hangs under the clock, on the right, without taking room (the clock and the sound button no longer push the top bar into two rows)
+- [x] No "¡Pita!" or "¡Grita!" during a match (emoji reactions stay); the server answers 409 if they are sent while the lobby is playing
+- [x] No-skip formats charge sitting out: a round with no word at all costs −5 (`RaceManager::chargeIdleRounds`, applied by the first client that syncs the next round and when the match closes; a late word for that round undoes it), and in "first wins" a plate nobody took costs −5 to whoever never tried it. Stored as `run_words.kind = idle`; the player sees why their score dropped
+### PR 9 · `feat/multiplayer-polish`
 - [ ] Multiplayer stats (wins, podiums), reconnection, Playwright E2E with several browser contexts
 
 ## F7 – Production

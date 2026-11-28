@@ -13,6 +13,7 @@ use App\Models\Lobby;
 use App\Models\LobbyMatch;
 use App\Models\MatchTiebreak;
 use App\Models\Run;
+use App\Models\RunWord;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -116,6 +117,57 @@ class RaceManager
     }
 
     /**
+     * "Rounds" and "first wins" have no "Pasamatrícula", so a plate passed without a single try costs
+     * the same −5: a player far ahead cannot just sit the rest of the match out. Run with the match
+     * locked; each run is charged once per plate.
+     *
+     * @param  list<string>  $plates  plates that are over
+     */
+    public function chargeIdle(LobbyMatch $match, array $plates): void
+    {
+        if ($plates === []) {
+            return;
+        }
+
+        $runs = $match->runs()->get();
+        $tried = RunWord::whereIn('run_id', $runs->modelKeys())->whereIn('plate', $plates)
+            ->get(['run_id', 'plate'])
+            ->groupBy('run_id')
+            ->map(fn ($words) => $words->pluck('plate')->all());
+
+        foreach ($runs as $run) {
+            $missed = array_diff($plates, $tried[$run->id] ?? []);
+
+            if ($missed === []) {
+                continue;
+            }
+
+            $run->withLock(function () use ($run, $missed): void {
+                foreach ($missed as $plate) {
+                    $run->chargeIdle($plate);
+                }
+                $run->save();
+            });
+            $this->scored($run);
+        }
+    }
+
+    /** "Rounds": charges the rounds that are over, every one of them once the clock has run out. */
+    public function chargeIdleRounds(LobbyMatch $match): void
+    {
+        DB::transaction(function () use ($match): void {
+            $match = LobbyMatch::whereKey($match->id)->lockForUpdate()->first();
+
+            if ($match === null || ! $match->isRounds() || $match->starts_at->isFuture()) {
+                return;
+            }
+
+            $over = $match->ends_at->isPast() ? $match->roundCount() : $match->currentRound();
+            $this->chargeIdle($match, array_map(fn (int $round) => $match->plateAt($round), $over > 0 ? range(0, $over - 1) : []));
+        });
+    }
+
+    /**
      * Closes the match once every run has ended or the clock has run out, then settles it: podium
      * tiebreaks first, if the lobby plays them, and then back to the starting grid.
      */
@@ -128,6 +180,7 @@ class RaceManager
                 return false;
             }
 
+            $this->chargeIdleRounds($match);
             $match->update(['finished_at' => now()]);
             // Runs whose page was closed never called "end".
             $match->runs()->whereNull('ended_at')->update(['ended_at' => now()]);

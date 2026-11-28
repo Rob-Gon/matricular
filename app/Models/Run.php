@@ -287,6 +287,24 @@ class Run extends Model
         $this->plate_dealt_at = $match->roundStartsAt($round);
     }
 
+    /** "Rounds" and "first wins" have no "Pasamatrícula": a plate passed without a try costs the same. */
+    public function chargeIdle(string $plate): void
+    {
+        $this->score -= self::POINTS_PENALTY;
+        $this->record(['kind' => RunWord::KIND_IDLE, 'plate' => $plate, 'elapsed_ms' => null, 'points' => -self::POINTS_PENALTY]);
+    }
+
+    /** A word for the round that just closed (sent in time): the player did take part, so the charge goes. */
+    public function forgiveIdle(): void
+    {
+        $this->withLock(function (): void {
+            if ($this->runWords()->where('kind', RunWord::KIND_IDLE)->where('plate', $this->plate)->delete() > 0) {
+                $this->score += self::POINTS_PENALTY;
+                $this->save();
+            }
+        });
+    }
+
     public function skipPlate(string $newPlate): void
     {
         $this->score -= self::POINTS_PENALTY;
